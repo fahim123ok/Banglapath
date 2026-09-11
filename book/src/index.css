@@ -1,0 +1,62 @@
+@import "tailwindcss";
+
+@keyframes pageFlipNext {
+  0% {
+    transform: rotateY(0deg);
+    filter: brightness(1);
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
+  }
+  50% {
+    filter: brightness(0.85);
+    box-shadow: 0 20px 45px rgba(0, 0, 0, 0.4);
+  }
+  100% {
+    transform: rotateY(-180deg);
+    filter: brightness(1);
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
+  }
+}
+
+@keyframes pageFlipPrev {
+  0% {
+    transform: rotateY(0deg);
+    filter: brightness(1);
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
+  }
+  50% {
+    filter: brightness(0.85);
+    box-shadow: 0 20px 45px rgba(0, 0, 0, 0.4);
+  }
+  100% {
+    transform: rotateY(180deg);
+    filter: brightness(1);
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
+  }
+}
+
+.animate-page-flip-next {
+  animation: pageFlipNext 0.45s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  transform-style: preserve-3d;
+}
+
+.animate-page-flip-prev {
+  animation: pageFlipPrev 0.45s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  transform-style: preserve-3d;
+}
+
+/* Custom smooth dark scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(28, 25, 23, 0.6);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(120, 113, 108, 0.5);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(245, 158, 11, 0.7);
+}
+

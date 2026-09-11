@@ -1,0 +1,13 @@
+{
+  "name": "banglapath",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Cinematic Bangladesh travel explorer with an AI guide that speaks as the country itself.",
+  "main": "server.js",
+  "scripts": {
+    "dev": "node server.js",
+    "start": "node server.js",
+    "lint": "node --check server.js && node --check home.js && node --check script.js && node --check config.js"
+  },
+  "engines": { "node": ">=18" }
+}

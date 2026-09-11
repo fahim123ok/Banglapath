@@ -1,0 +1,20 @@
+{
+  "name": "banglapath",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Cinematic Bangladesh travel explorer with an AI guide that speaks as the country itself.",
+  "main": "banglapath-home/server.js",
+  "workspaces": [
+    "book",
+    "Hospital finding"
+  ],
+  "scripts": {
+    "dev": "node banglapath-home/server.js",
+    "start": "node banglapath-home/server.js",
+    "build": "npm run build --workspace=book && npm run build --workspace=\"Hospital finding\"",
+    "lint": "node --check banglapath-home/server.js && node --check banglapath-home/modules.js && node --check banglapath-home/home.js && node --check banglapath-home/script.js && node --check banglapath-home/config.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

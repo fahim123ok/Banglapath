@@ -1,0 +1,7 @@
+{
+  "name": "CuraMap - Hospital Finder & Live Road Navigator",
+  "description": "Clean minimalist soft UI map that locates real nearby hospitals around you, displaying rich red pins with photos and names, official hospital websites, and live road navigation routes.",
+  "requestFramePermissions": ["geolocation"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+

@@ -1,0 +1,6 @@
+{
+  "name": "BanglaPath",
+  "description": "Cinematic Bangladesh travel explorer with an AI guide that speaks as the country itself.",
+  "requestFramePermissions": ["microphone", "geolocation"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
