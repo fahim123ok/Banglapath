@@ -196,10 +196,12 @@ function coverOrigin(point) {
 }
 
 function setOrigin() {
+  if (!tigerLayer) return;
   tigerLayer.style.transformOrigin = coverOrigin(TIGER_EYE);
 }
 
 function readProgress() {
+  if (!track) { progress = 0; return; }
   const scrollable = track.offsetHeight - window.innerHeight;
   progress = scrollable > 0 ? clamp(window.scrollY / scrollable) : 0;
 }
@@ -216,6 +218,7 @@ function setPlaying(video, shouldPlay) {
 function render() {
   ticking = false;
   if (launched) return;
+  if (!tigerLayer) return; // new screen-based intro - no scroll animation needed
 
   // Phase 1 (0 -> 0.7): push through the tiger's pupil.
   const zoomT = easeInOutCubic(range(progress, 0, 0.7));
@@ -243,8 +246,7 @@ function render() {
 
   // The outro line hands over to the sign-up card.
   outro.style.opacity = `${range(progress, 0.8, 0.88) * (1 - range(progress, 0.88, 0.94))}`;
-  auth.classList.toggle('is-visible', progress > 0.92);
-  auth.setAttribute('aria-hidden', progress > 0.92 ? 'false' : 'true');
+  if (auth) { auth.classList.toggle('is-visible', progress > 0.92); auth.setAttribute('aria-hidden', progress > 0.92 ? 'false' : 'true'); }
 }
 
 function blockScroll(e) {
@@ -269,16 +271,16 @@ document.querySelectorAll('.auth-tab').forEach((tab) => {
   tab.addEventListener('click', () => {
     const isLogin = tab.dataset.mode === 'login';
     document.querySelectorAll('.auth-tab').forEach((t) => t.classList.toggle('is-active', t === tab));
-    auth.classList.toggle('is-login', isLogin);
-    authTitle.textContent = isLogin ? 'Welcome back' : 'Create your account';
-    authSub.textContent = isLogin
+    if (auth) auth.classList.toggle('is-login', isLogin);
+    if (authTitle) authTitle.textContent = isLogin ? 'Welcome back' : 'Create your account';
+    if (authSub) authSub.textContent = isLogin
       ? 'Pick up where you left off.'
       : 'Start exploring Bangladesh, one wild place at a time.';
-    authSubmit.textContent = isLogin ? 'Log in' : 'Create account';
+    if (authSubmit) authSubmit.textContent = isLogin ? 'Log in' : 'Create account';
   });
 });
 
-document.querySelector('.auth-form').addEventListener('submit', (e) => {
+document.querySelector('.auth-form')?.addEventListener('submit', (e) => {
   e.preventDefault();
   launch();
 });
@@ -597,6 +599,9 @@ render();
 if (location.hash === '#home') {
   launch(true);
 }
+
+
+
 
 
 
