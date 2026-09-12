@@ -2,7 +2,13 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover" />
+<meta name="theme-color" content="#047857">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="BanglaPath">
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/images/bot-avatar.png">
 <title>BanglaPath &mdash; Explore Bangladesh</title>
 <meta name="description" content="Cinematic Bangladesh travel explorer with an AI guide that speaks as the country itself." />
 <meta property="og:title" content="BanglaPath &mdash; Explore Bangladesh" />
@@ -10,6 +16,8 @@
 <meta property="og:type" content="website" />
 <link rel="preload" href="fonts/Poppins-400-latin.woff2" as="font" type="font/woff2" crossorigin />
 <link rel="preload" href="fonts/PlayfairDisplay-700-latin.woff2" as="font" type="font/woff2" crossorigin />
+<link rel="preconnect" href="https://generativelanguage.googleapis.com">
+<link rel="dns-prefetch" href="https://generativelanguage.googleapis.com">
 <link rel="stylesheet" href="fonts.css" />
 <link rel="stylesheet" href="style.css" />
 <link rel="stylesheet" href="home.css" />
@@ -399,7 +407,7 @@
 
     <!-- Chat Section -->
     <section class="mh-chat-section" id="mh-chat-section">
-      <div class="mh-chat-log" id="mh-chat-log">
+      <div class="mh-chat-log" id="mh-chat-log" aria-live="polite" aria-atomic="false">
         <!-- Messages injected by JS -->
       </div>
 

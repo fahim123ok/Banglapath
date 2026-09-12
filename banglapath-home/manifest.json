@@ -1,0 +1,23 @@
+{
+  "name": "BanglaPath - Explore Bangladesh",
+  "short_name": "BanglaPath",
+  "description": "AI-powered Bangladesh travel guide",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#047857",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "images/bot-avatar.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "images/bot-avatar.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

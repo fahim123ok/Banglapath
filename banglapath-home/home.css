@@ -2,7 +2,25 @@
    BanglaPath — the app revealed after the foliage sweep
    ============================================================ */
 
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
 :root {
+  --z-base: 1;
+  --z-dropdown: 1000;
+  --z-sticky: 1020;
+  --z-fixed: 1030;
+  --z-modal-backdrop: 1040;
+  --z-modal: 1050;
+  --z-popover: 1060;
+  --z-tooltip: 1070;
+  --z-notification: 1080;
+  --z-toast: 1090;
   --green-900: #114a31;
   --green-800: #14532d;
   --green-700: #1e7b41;
@@ -8541,6 +8559,17 @@ select:focus-visible,
 
 @media (max-width: 768px) {
 
+  /* Safe Area Insets for all pages */
+  #page-translator,
+  #page-profile,
+  #page-planner,
+  #page-discover,
+  .content {
+    padding-bottom: max(90px, calc(72px + env(safe-area-inset-bottom))) !important;
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+
   /* Hide the desktop app shell by default on mobile */
   .app,
   .sweep,
@@ -8724,7 +8753,9 @@ select:focus-visible,
     cursor: pointer;
     border: none;
     background: none;
-    padding: 0;
+    padding: 10px;
+    min-width: 44px;
+    min-height: 44px;
     transition: transform 0.15s ease;
   }
 
