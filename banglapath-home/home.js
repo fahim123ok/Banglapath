@@ -7729,8 +7729,8 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
           // Scroll to chat
           mhScrollBottom();
           const name = place ? `${place.name}, ${place.district}` : label;
-          // Send to the shared AI
-          send(
+          // Send to the mobile chat using mobileSend
+          mobileSend(
             `I just tapped the map pin on ${name}. Tell me about this place in your own voice — what it feels like, what I would see and do there, and the best time to come.`,
             { display: `Tell me about ${label} 📍` }
           );
