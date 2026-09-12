@@ -10,6 +10,6 @@
  */
 window.BANGLAPATH_CONFIG = {
   proxyUrl: '/api/chat',
-  model: 'gemini-2.5-flash',
+  model: 'gemini-3.6-flash',
   geminiApiKey: '',
 };

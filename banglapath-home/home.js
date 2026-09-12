@@ -8,7 +8,7 @@ const BanglaPath = (() => {
 
   const CONFIG = window.BANGLAPATH_CONFIG || {};
   const PROXY_URL = CONFIG.proxyUrl || '/api/chat';
-  const MODEL = CONFIG.model || 'gemini-2.5-flash';
+  const MODEL = CONFIG.model || 'gemini-3.6-flash';
   const DIRECT_URL = (key) =>
     `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${encodeURIComponent(key)}`;
 
