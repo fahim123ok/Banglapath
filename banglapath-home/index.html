@@ -20,100 +20,74 @@
 <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400..700&family=Cinzel:wght@400..700&family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=Dancing+Script:wght@400..700&family=Kalam:wght@300;400;700&family=Outfit:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&display=swap" rel="stylesheet">
 </head>
 <body>
-<div class="scroll-track">
-  <div class="stage">
-  <!-- NEW: Bangladesh Showcase Video Carousel -->
-  <div class="intro-carousel" id="intro-carousel">
-    <video class="carousel-video active" src="video/intro/comet_p5czyHmP77.mp4" muted playsinline autoplay preload="auto" loading="eager" data-index="0"></video>
-    <video class="carousel-video" src="video/intro/comet_FmHIGjRvzW.mp4" muted playsinline preload="auto" loading="eager" data-index="1"></video>
-    <video class="carousel-video" src="video/intro/comet_4rrvXPw4YK.mp4" muted playsinline preload="auto" loading="eager" data-index="2"></video>
-    <video class="carousel-video" src="video/intro/comet_4IgqKTTuyo.mp4" muted playsinline preload="auto" loading="eager" data-index="3"></video>
-    <video class="carousel-video" src="video/intro/comet_1wKPCaETw5.mp4" muted playsinline preload="auto" loading="eager" data-index="4"></video>
-    <div class="carousel-dots">
-      <span class="dot active" data-index="0"></span>
-      <span class="dot" data-index="1"></span>
-      <span class="dot" data-index="2"></span>
-      <span class="dot" data-index="3"></span>
-      <span class="dot" data-index="4"></span>
+<!-- ============ SCREEN 1: CAROUSEL ============ -->
+<div id="screen-carousel" class="intro-screen">
+  <video class="carousel-video is-active" src="video/intro/comet_p5czyHmP77.mp4" muted playsinline autoplay preload="auto" data-index="0"></video>
+  <video class="carousel-video" src="video/intro/comet_FmHIGjRvzW.mp4" muted playsinline preload="auto" data-index="1"></video>
+  <video class="carousel-video" src="video/intro/comet_4rrvXPw4YK.mp4" muted playsinline preload="auto" data-index="2"></video>
+  <video class="carousel-video" src="video/intro/comet_4IgqKTTuyo.mp4" muted playsinline preload="auto" data-index="3"></video>
+  <video class="carousel-video" src="video/intro/comet_1wKPCaETw5.mp4" muted playsinline preload="auto" data-index="4"></video>
+
+  <div class="carousel-overlay">
+    <div class="carousel-brand">
+      <span class="brand-a">Bangla</span><span class="brand-b">Path</span>
+    </div>
+    <h1 class="carousel-title">Discover Bangladesh</h1>
+    <p class="carousel-sub">Your AI-powered travel companion</p>
+    <div class="carousel-actions">
+      <button id="btn-get-started" type="button" class="carousel-cta">Get Started</button>
+      <button id="btn-skip-to-app" type="button" class="carousel-skip">Skip &#x2192;</button>
     </div>
   </div>
 
-    <div class="layer tiger-layer">
-      <video class="tiger" src="video/tiger.mp4" poster="images/tiger-poster.jpg"
-             muted playsinline loop autoplay preload="auto" loading="eager"></video>
-    </div>
-    <div class="layer deer-layer">
-      <video class="deer" src="video/deer.mp4" poster="images/deer-poster.jpg"
-             muted playsinline loop preload="auto" loading="eager"></video>
-    </div>
-    <div class="vignette"></div>
-    <button class="corner-skip-btn" id="btn-quick-skip" type="button" aria-label="Skip intro and go to app">Skip to App &rarr;</button>
-
-    <div class="caption caption-intro">
-      <h1>Let&rsquo;s explore Bangladesh together</h1>
-      <div class="cta-group">
-        <button class="cta" id="btn-get-started" type="button" aria-label="Let's Get Started">Let&rsquo;s Get Started</button>
-        <button class="cta-skip" id="btn-skip-intro" type="button" aria-label="Skip Intro">Skip Intro &rarr;</button>
-      </div>
-      <p>Scroll</p>
-      <div class="chevron"></div>
-    </div>
-
-    <div class="caption caption-outro">
-      <h2>A world inside</h2>
-      <p>Spring light, and something watching back.</p>
-    </div>
-
-    <div class="auth" aria-hidden="true">
-      <div class="auth-card">
-        <div class="auth-tabs" role="tablist">
-          <button class="auth-tab is-active" type="button" data-mode="signup" role="tab">Sign up</button>
-          <button class="auth-tab" type="button" data-mode="login" role="tab">Log in</button>
-        </div>
-
-        <h2 class="auth-title">Create your account</h2>
-        <p class="auth-sub">Start exploring Bangladesh, one wild place at a time.</p>
-
-        <form class="auth-form" novalidate>
-          <label class="field field-name">
-            <span>Full name</span>
-            <input type="text" name="name" autocomplete="name" placeholder="Fayezul Islam" />
-          </label>
-          <label class="field">
-            <span>Email</span>
-            <input type="email" name="email" autocomplete="email" placeholder="you@example.com" />
-          </label>
-          <label class="field">
-            <span>Password</span>
-            <input type="password" name="password" autocomplete="new-password" placeholder="••••••••" />
-          </label>
-          <button class="auth-submit" type="submit">Create account</button>
-        </form>
-
-        <div class="auth-divider"><span>or continue with</span></div>
-
-        <div class="auth-social">
-          <button class="social google-btn" type="button" aria-label="Continue with Google">
-            <svg viewBox="0 0 48 48" width="20" height="20" aria-hidden="true">
-              <path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.6l6.7-6.7C35.6 2.6 30.2 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.8 6.1C12.3 13.2 17.6 9.5 24 9.5z"/>
-              <path fill="#4285F4" d="M46.1 24.6c0-1.6-.1-3.2-.4-4.6H24v9.1h12.4c-.5 2.9-2.2 5.3-4.7 7l7.6 5.9c4.4-4.1 6.8-10.1 6.8-17.4z"/>
-              <path fill="#FBBC05" d="M10.4 28.7a14.6 14.6 0 0 1 0-9.4l-7.8-6.1a24 24 0 0 0 0 21.6l7.8-6.1z"/>
-              <path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.6-5.9c-2.1 1.4-4.8 2.3-8.3 2.3-6.4 0-11.7-3.7-13.6-9.1l-7.8 6.1C6.5 42.6 14.6 48 24 48z"/>
-            </svg>
-            <span>Google</span>
-          </button>
-          <button class="social apple-btn" type="button" aria-label="Continue with Apple">
-            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true">
-              <path d="M16.4 12.8c0-2.4 2-3.6 2.1-3.6-1.1-1.7-2.9-1.9-3.6-1.9-1.5-.2-3 .9-3.7.9-.8 0-2-.9-3.3-.9-1.7 0-3.3 1-4.1 2.5-1.8 3.1-.5 7.6 1.3 10.1.9 1.2 1.9 2.6 3.2 2.5 1.3-.1 1.8-.8 3.3-.8s2 .8 3.3.8 2.2-1.2 3.1-2.4c1-1.4 1.4-2.7 1.4-2.8-.1 0-2.9-1.1-2.9-4.4zM14.1 4.9c.7-.9 1.2-2.1 1-3.3-1 0-2.3.7-3 1.6-.7.8-1.3 2-1.1 3.2 1.1.1 2.3-.6 3.1-1.5z"/>
-            </svg>
-            <span>Apple</span>
-          </button>
-        </div>
-
-        <p class="auth-fine">By continuing you agree to our Terms &amp; Privacy Policy.</p>
-      </div>
-    </div>
+  <div class="carousel-dots">
+    <span class="cdot is-active" data-index="0"></span>
+    <span class="cdot" data-index="1"></span>
+    <span class="cdot" data-index="2"></span>
+    <span class="cdot" data-index="3"></span>
+    <span class="cdot" data-index="4"></span>
   </div>
+</div>
+
+<!-- ============ SCREEN 2: TIGER + SIGN UP ============ -->
+<div id="screen-auth" class="intro-screen is-hidden">
+  <video class="tiger-bg-video" src="video/tiger.mp4" muted playsinline loop autoplay preload="auto"></video>
+  <div class="tiger-vignette"></div>
+
+  <div class="auth-float-card">
+    <div class="auth-logo">
+      <span class="brand-a">Bangla</span><span class="brand-b">Path</span>
+    </div>
+    <h2 class="auth-float-title">Start your journey</h2>
+    <p class="auth-float-sub">Explore 166 places across Bangladesh with your AI guide</p>
+
+    <div class="auth-float-social">
+      <button class="auth-google-btn" id="btn-google-signin" type="button">
+        <svg viewBox="0 0 48 48" width="20" height="20" aria-hidden="true">
+          <path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.6l6.7-6.7C35.6 2.6 30.2 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.8 6.1C12.3 13.2 17.6 9.5 24 9.5z"/>
+          <path fill="#4285F4" d="M46.1 24.6c0-1.6-.1-3.2-.4-4.6H24v9.1h12.4c-.5 2.9-2.2 5.3-4.7 7l7.6 5.9c4.4-4.1 6.8-10.1 6.8-17.4z"/>
+          <path fill="#FBBC05" d="M10.4 28.7a14.6 14.6 0 0 1 0-9.4l-7.8-6.1a24 24 0 0 0 0 21.6l7.8-6.1z"/>
+          <path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.6-5.9c-2.1 1.4-4.8 2.3-8.3 2.3-6.4 0-11.7-3.7-13.6-9.1l-7.8 6.1C6.5 42.6 14.6 48 24 48z"/>
+        </svg>
+        Continue with Google
+      </button>
+      <button class="auth-apple-btn" id="btn-apple-signin" type="button">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true">
+          <path d="M16.4 12.8c0-2.4 2-3.6 2.1-3.6-1.1-1.7-2.9-1.9-3.6-1.9-1.5-.2-3 .9-3.7.9-.8 0-2-.9-3.3-.9-1.7 0-3.3 1-4.1 2.5-1.8 3.1-.5 7.6 1.3 10.1.9 1.2 1.9 2.6 3.2 2.5 1.3-.1 1.8-.8 3.3-.8s2 .8 3.3.8 2.2-1.2 3.1-2.4c1-1.4 1.4-2.7 1.4-2.8-.1 0-2.9-1.1-2.9-4.4zM14.1 4.9c.7-.9 1.2-2.1 1-3.3-1 0-2.3.7-3 1.6-.7.8-1.3 2-1.1 3.2 1.1.1 2.3-.6 3.1-1.5z"/>
+        </svg>
+        Continue with Apple
+      </button>
+    </div>
+
+    <p class="auth-float-fine">By continuing you agree to our Terms &amp; Privacy Policy</p>
+    <button class="auth-back-btn" id="btn-auth-back" type="button">&#x2190; Back</button>
+  </div>
+</div>
+
+<!-- ============ LEAF SWEEP (kept from original) ============ -->
+<div class="sweep" aria-hidden="true">
+  <div class="sweep-side sweep-left"></div>
+  <div class="sweep-side sweep-right"></div>
 </div>
 
 <div class="whiteout"></div>
