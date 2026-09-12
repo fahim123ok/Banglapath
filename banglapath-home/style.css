@@ -38,7 +38,11 @@ body {
   pointer-events: none;
 }
 
-.tiger-layer {`n  opacity: 0;`n  transition: opacity 0.8s ease;`n transform-origin: 40.6% 32.3%; }
+.tiger-layer {
+  opacity: 0;
+  transition: opacity 0.8s ease;
+  transform-origin: 40.6% 32.3%;
+}
 
 .deer-layer {
   opacity: 0;
