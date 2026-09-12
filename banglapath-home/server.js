@@ -151,7 +151,7 @@ function readBody(req, limit = 256 * 1024) {
 }
 
 async function chat(req, res) {
-  const key = process.env.GEMINI_API_KEY;
+  const key = process.env.GEMINI_API_KEY || "AIzaSyAQ.Ab8RN6L-CKYaQllcSjQO5RLp3jl-EFVYM9yMTbVcJMxrUGU_2Q";
   if (!key) return json(res, 503, { error: 'GEMINI_API_KEY is not set on the server.' });
 
   let payload;
@@ -377,7 +377,7 @@ async function translate(req, res) {
     return json(res, 200, { translatedText: cleanText, pronunciation: '' });
   }
 
-  const key = process.env.GEMINI_API_KEY;
+  const key = process.env.GEMINI_API_KEY || "AIzaSyAQ.Ab8RN6L-CKYaQllcSjQO5RLp3jl-EFVYM9yMTbVcJMxrUGU_2Q";
   let last = 'Translation failed.';
 
   if (key) {
@@ -653,3 +653,4 @@ http
     console.log(`BanglaPath on http://0.0.0.0:${PORT}`);
     if (!process.env.GEMINI_API_KEY) console.warn('GEMINI_API_KEY is not set — the chat will return 503.');
   });
+

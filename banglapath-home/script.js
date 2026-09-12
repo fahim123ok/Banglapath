@@ -1,3 +1,56 @@
+/* VIDEO CAROUSEL AUTO-PLAY */
+(function initCarousel() {
+  const carousel = document.getElementById('intro-carousel');
+  if (!carousel) return;
+  const videos = carousel.querySelectorAll('.carousel-video');
+  const dots = carousel.querySelectorAll('.dot');
+  let currentIndex = 0;
+  let autoPlayTimer = null;
+
+  function switchVideo(index) {
+    if (index < 0 || index >= videos.length) return;
+    videos.forEach(v => v.classList.remove('active'));
+    dots.forEach(d => d.classList.remove('active'));
+    videos[index].classList.add('active');
+    dots[index].classList.add('active');
+    videos[index].currentTime = 0;
+    videos[index].play().catch(() => {});
+    currentIndex = index;
+  }
+
+  function nextVideo() {
+    const next = (currentIndex + 1) % videos.length;
+    switchVideo(next);
+  }
+
+  dots.forEach((dot, i) => {
+    dot.addEventListener('click', () => {
+      clearInterval(autoPlayTimer);
+      switchVideo(i);
+      autoPlayTimer = setInterval(nextVideo, 5000);
+    });
+  });
+
+  videos[0].play().catch(() => {});
+  autoPlayTimer = setInterval(nextVideo, 5000);
+
+  const getStartedBtn = document.getElementById('btn-get-started');
+  if (getStartedBtn) {
+    getStartedBtn.addEventListener('click', () => {
+      clearInterval(autoPlayTimer);
+      carousel.classList.add('hidden');
+    });
+  }
+
+  const skipIntroBtn = document.getElementById('btn-skip-intro');
+  if (skipIntroBtn) {
+    skipIntroBtn.addEventListener('click', () => {
+      clearInterval(autoPlayTimer);
+      carousel.classList.add('hidden');
+    });
+  }
+})();
+
 const track = document.querySelector('.scroll-track');
 const tigerLayer = document.querySelector('.tiger-layer');
 const deerLayer = document.querySelector('.deer-layer');
@@ -447,4 +500,5 @@ render();
 if (location.hash === '#home') {
   launch(true);
 }
+
 
