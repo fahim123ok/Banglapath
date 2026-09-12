@@ -43,54 +43,65 @@
   playLast2(vids[0]);
   startTimer();
 
-  /* ---- Get Started → tiger auth ---- */
-  var gsBtn = document.getElementById('btn-get-started');
-  if (gsBtn) gsBtn.addEventListener('click', function() {
+  /* ---- Get Started → tiger auth (no leaf animation) ---- */
+  function goToAuth() {
     clearInterval(tmr);
-    sc.style.transition = 'opacity 0.5s ease';
+    sc.style.transition = 'opacity 0.4s ease';
     sc.style.opacity = '0';
     setTimeout(function() {
       sc.classList.add('is-hidden');
       if (sa) {
         sa.classList.remove('is-hidden');
         sa.style.opacity = '0';
-        sa.style.transition = 'opacity 0.6s ease';
+        sa.style.transition = 'opacity 0.5s ease';
         requestAnimationFrame(function() { sa.style.opacity = '1'; });
         // start tiger video
         var tv = sa.querySelector('.tiger-bg-video');
         if (tv) tv.play().catch(function(){});
       }
-    }, 500);
-  });
+    }, 400);
+  }
+
+  var gsBtn = document.getElementById('btn-get-started');
+  if (gsBtn) {
+    gsBtn.addEventListener('click', goToAuth);
+    gsBtn.addEventListener('touchend', function(e) {
+      e.preventDefault();
+      goToAuth();
+    });
+  }
 
   /* ---- Skip → straight to app ---- */
   var skipBtn = document.getElementById('btn-skip-to-app');
-  if (skipBtn) skipBtn.addEventListener('click', function() {
-    clearInterval(tmr);
-    sc.classList.add('is-hidden');
-    if (sa) sa.classList.add('is-hidden');
-    window.dispatchEvent(new CustomEvent('bp-launch'));
-  });
+  if (skipBtn) {
+    skipBtn.addEventListener('click', function() {
+      clearInterval(tmr);
+      sc.classList.add('is-hidden');
+      if (sa) sa.classList.add('is-hidden');
+      launch(true);
+    });
+  }
 
   /* ---- Back button ---- */
   var backBtn = document.getElementById('btn-auth-back');
-  if (backBtn) backBtn.addEventListener('click', function() {
-    if (sa) {
-      sa.style.opacity = '0';
-      setTimeout(function() {
-        sa.classList.add('is-hidden');
-        sc.classList.remove('is-hidden');
-        sc.style.opacity = '1';
-        jumpTo(0); startTimer();
-      }, 400);
-    }
-  });
+  if (backBtn) {
+    backBtn.addEventListener('click', function() {
+      if (sa) {
+        sa.style.opacity = '0';
+        setTimeout(function() {
+          sa.classList.add('is-hidden');
+          sc.classList.remove('is-hidden');
+          sc.style.opacity = '1';
+          jumpTo(0); startTimer();
+        }, 400);
+      }
+    });
+  }
 
   /* ---- Google / Apple → leaf wipe → app ---- */
   ['btn-google-signin','btn-apple-signin'].forEach(function(id) {
     var btn = document.getElementById(id);
     if (btn) btn.addEventListener('click', function() {
-      if (sa) sa.classList.add('is-hidden');
       window.dispatchEvent(new CustomEvent('bp-launch'));
     });
   });
@@ -116,7 +127,7 @@ document.querySelectorAll('.auth-tab-btn').forEach(function(btn) {
   });
 });
 
-/* ---- Email form submit -> launch ---- */
+/* ---- Email form submit -> launch with leaf sweep ---- */
 ['form-signup','form-login'].forEach(function(id) {
   var form = document.getElementById(id);
   if (form) form.addEventListener('submit', function(e) {
@@ -125,10 +136,9 @@ document.querySelectorAll('.auth-tab-btn').forEach(function(btn) {
   });
 });
 
-/* Bridge: bp-launch -> launch with leaf sweep on desktop, fast on mobile */
+/* Bridge: bp-launch -> launch with leaf sweep */
 window.addEventListener('bp-launch', function() {
   if (typeof launch !== 'function') return;
-  // Ensure buildSweep has run so canvases are painted
   if (typeof buildSweep === 'function') {
     try { 
       buildSweep();
@@ -136,10 +146,9 @@ window.addEventListener('bp-launch', function() {
       console.error('buildSweep error:', e);
     }
   }
-  // Give canvas time to paint before starting animation
   setTimeout(function() {
-    launch(false); // false = use sweep animation on desktop
-  }, 100);
+    launch(false); // false = use sweep animation
+  }, 50);
 });
 
 const track = document.querySelector('.scroll-track');
@@ -483,9 +492,6 @@ function launch(fast = false) {
   if (launched) return;
   launched = true;
   cancelAutoScroll();
-  // Hide new intro screens if still visible
-  document.getElementById('screen-carousel')?.classList.add('is-hidden');
-  document.getElementById('screen-auth')?.classList.add('is-hidden');
 
   // Capture user name / email if provided
   const nameVal = document.querySelector('input[name="name"]')?.value.trim();
@@ -507,7 +513,6 @@ function launch(fast = false) {
 
   if(auth) auth.classList.add('is-dismissed');
   if(auth) auth.setAttribute('aria-hidden','true');
-  // aria-hidden set above
 
   const revealMobileNav = () => {
     const mobileNav = document.querySelector('.mh-bottom-nav');
@@ -517,30 +522,9 @@ function launch(fast = false) {
     }
   };
 
-  const isMobile = window.innerWidth <= 768;
-
-  if (fast || isMobile) {
-    document.body.classList.add('is-launched');
-    tigerVideo?.pause();
-    deerVideo?.pause();
-    revealMobileNav();
-    BanglaPath.enterHome();
-    return;
-  }
-
-  // The stage is position: sticky, so the page must stay scrollable —
-  // freeze the scroll position instead of hiding overflow.
-  lockedAt = window.scrollY;
-  document.body.classList.add('is-launching');
-  window.addEventListener('wheel', blockScroll, { passive: false });
-  window.addEventListener('touchmove', blockScroll, { passive: false });
-
-  // Play the sweep animation
-  setTimeout(playSweep, 300);
-  
-  // Swap the scene underneath while the leaves cover the screen, and drop the
-  // video layers so the sweep-out only has to composite the foliage.
-  setTimeout(() => {
+  if (fast) {
+    document.getElementById('screen-carousel')?.classList.add('is-hidden');
+    document.getElementById('screen-auth')?.classList.add('is-hidden');
     document.body.classList.add('is-launched');
     tigerVideo?.pause();
     deerVideo?.pause();
@@ -551,16 +535,38 @@ function launch(fast = false) {
       const appEl = document.getElementById('app');
       if (appEl) appEl.hidden = false;
     }
-    // The home screen owns scrolling from here, so the intro's scroll freeze
-    // has to come off with it.
+    return;
+  }
+
+  lockedAt = window.scrollY;
+  document.body.classList.add('is-launching');
+  window.addEventListener('wheel', blockScroll, { passive: false });
+  window.addEventListener('touchmove', blockScroll, { passive: false });
+
+  // Play the leaf sweep animation immediately
+  playSweep();
+  
+  // Swap the scene underneath while the leaves cover the screen (~600ms)
+  setTimeout(() => {
+    document.getElementById('screen-carousel')?.classList.add('is-hidden');
+    document.getElementById('screen-auth')?.classList.add('is-hidden');
+    document.body.classList.add('is-launched');
+    tigerVideo?.pause();
+    deerVideo?.pause();
+    revealMobileNav();
+    if (window.BanglaPath && typeof window.BanglaPath.enterHome === 'function') {
+      window.BanglaPath.enterHome();
+    } else {
+      const appEl = document.getElementById('app');
+      if (appEl) appEl.hidden = false;
+    }
     window.removeEventListener('wheel', blockScroll);
     window.removeEventListener('touchmove', blockScroll);
-  }, 1900);
+  }, 600);
 }
 
 // Wire CTA & Skip buttons for instant mobile tap + desktop click
-bindTapOrClick(cta, () => launch(window.innerWidth <= 768));
-bindTapOrClick(document.getElementById('btn-get-started'), () => launch(window.innerWidth <= 768));
+bindTapOrClick(cta, () => launch(false));
 bindTapOrClick(document.getElementById('btn-skip-intro'), () => launch(true));
 bindTapOrClick(document.getElementById('btn-quick-skip'), () => launch(true));
 
@@ -568,20 +574,25 @@ bindTapOrClick(document.getElementById('btn-quick-skip'), () => launch(true));
 ['click', 'touchend'].forEach((evtType) => {
   document.addEventListener(evtType, (e) => {
     if (launched) return;
-    const target = e.target && e.target.closest && e.target.closest('#btn-get-started, #btn-skip-intro, #btn-quick-skip, .cta, .cta-skip, .corner-skip-btn');
+    const target = e.target && e.target.closest && e.target.closest('#btn-skip-intro, #btn-quick-skip, .cta, .cta-skip, .corner-skip-btn');
     if (target) {
       if (e.cancelable) e.preventDefault();
       e.stopPropagation();
       const isQuick = target.id === 'btn-skip-intro' || target.id === 'btn-quick-skip' || target.classList.contains('cta-skip') || target.classList.contains('corner-skip-btn');
-      launch(isQuick || window.innerWidth <= 768);
+      launch(isQuick);
     }
   }, { passive: false });
 });
 
 // Wire auth modal buttons
-bindTapOrClick(googleBtn, () => launch(false));
-bindTapOrClick(document.querySelector('.apple-btn'), () => launch(false));
-bindTapOrClick(document.querySelector('.auth-submit'), () => launch(false));
+const googleBtnEl = document.getElementById('btn-google-signin');
+const appleBtnEl = document.getElementById('btn-apple-signin');
+if (googleBtnEl) bindTapOrClick(googleBtnEl, () => launch(false));
+if (appleBtnEl) bindTapOrClick(appleBtnEl, () => launch(false));
+
+document.querySelectorAll('.auth-submit-btn, .auth-submit').forEach(btn => {
+  bindTapOrClick(btn, () => launch(false));
+});
 
 buildSweep();
 
