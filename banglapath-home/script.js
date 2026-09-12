@@ -13,34 +13,44 @@
   var cur   = 0;
   var tmr   = null;
 
-  function playLast2(v) {
-    function go() {
-      v.currentTime = v.duration > 2 ? v.duration - 2 : 0;
-      v.play().catch(function(){});
-    }
-    if (v.readyState >= 1) go();
-    else v.addEventListener('loadedmetadata', go, { once: true });
-  }
+  vids.forEach(function(v) {
+    v.muted = true;
+    v.playsInline = true;
+    v.setAttribute('playsinline', '');
+    v.setAttribute('muted', '');
+    try { v.play().catch(function(){}); } catch(e) {}
+  });
 
   function jumpTo(idx) {
+    var nextIdx = (idx + vids.length) % vids.length;
+    if (cur === nextIdx && vids[cur].classList.contains('is-active')) return;
+
     vids[cur].classList.remove('is-active');
     cdots[cur].classList.remove('is-active');
-    cur = (idx + vids.length) % vids.length;
-    vids[cur].classList.add('is-active');
+    cur = nextIdx;
+    
+    var nextVid = vids[cur];
+    nextVid.classList.add('is-active');
     cdots[cur].classList.add('is-active');
-    playLast2(vids[cur]);
+
+    try {
+      if (nextVid.paused) {
+        var p = nextVid.play();
+        if (p) p.catch(function(){});
+      }
+    } catch(e) {}
   }
 
   function startTimer() {
     clearInterval(tmr);
-    tmr = setInterval(function() { jumpTo(cur + 1); }, 2000);
+    tmr = setInterval(function() { jumpTo(cur + 1); }, 3500);
   }
 
   cdots.forEach(function(d, i) {
     d.addEventListener('click', function() { jumpTo(i); startTimer(); });
   });
 
-  playLast2(vids[0]);
+  jumpTo(0);
   startTimer();
 
   /* ---- Get Started → tiger auth (no leaf animation) ---- */

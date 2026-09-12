@@ -7862,26 +7862,49 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
     if (micBtn) {
       micBtn.addEventListener('click', () => {
         const Recog = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (!Recog) { if (input) input.placeholder = 'Voice not supported'; return; }
+        if (!Recog) {
+          if (input) input.placeholder = 'Voice not supported in this browser';
+          showToast('Microphone dictation is not supported in this browser.');
+          return;
+        }
         if (mhRecog) {
           try { mhRecog.abort(); } catch(e) {}
           mhRecog = null;
           micBtn.classList.remove('is-recording');
+          showToast('🔇 Voice input stopped.');
           return;
         }
-        const rec = new Recog();
-        mhRecog = rec;
-        rec.lang = 'en-US';
-        rec.interimResults = true;
-        micBtn.classList.add('is-recording');
-        rec.onresult = (e) => {
-          let t = '';
-          for (let i = e.resultIndex; i < e.results.length; i++) t += e.results[i][0].transcript;
-          if (t && input) input.value = t;
-        };
-        rec.onend = () => { mhRecog = null; micBtn.classList.remove('is-recording'); };
-        rec.onerror = () => { mhRecog = null; micBtn.classList.remove('is-recording'); };
-        rec.start();
+        try {
+          const rec = new Recog();
+          mhRecog = rec;
+          // Set to bn-BD for authentic Bangladeshi speech recognition with en-US fallback
+          rec.lang = 'bn-BD';
+          rec.interimResults = true;
+          rec.continuous = true;
+          micBtn.classList.add('is-recording');
+          showToast('🎙️ Listening... Speak now in Bangla or English');
+          rec.onresult = (e) => {
+            let t = '';
+            for (let i = e.resultIndex; i < e.results.length; i++) {
+              t += e.results[i][0].transcript;
+            }
+            if (t && input) {
+              input.value = t;
+            }
+          };
+          rec.onend = () => { mhRecog = null; micBtn.classList.remove('is-recording'); };
+          rec.onerror = (err) => {
+            mhRecog = null;
+            micBtn.classList.remove('is-recording');
+            if (err.error === 'not-allowed') {
+              showToast('⚠️ Microphone permission denied. Please allow mic access.');
+            }
+          };
+          rec.start();
+        } catch(err) {
+          mhRecog = null;
+          micBtn.classList.remove('is-recording');
+        }
       });
     }
 
