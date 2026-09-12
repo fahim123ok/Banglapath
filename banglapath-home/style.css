@@ -733,6 +733,11 @@ body.carousel-done .tiger-layer {
 }
 .intro-screen.is-hidden { display: none !important; }
 
+/* General is-hidden utility class */
+.is-hidden {
+  display: none !important;
+}
+
 /* ---- Screen 1: Carousel ---- */
 #screen-carousel { background: #000; }
 

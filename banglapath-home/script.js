@@ -96,12 +96,6 @@
   });
 })();
 
-/* Bridge: bp-launch -> launch with leaf sweep on desktop, fast on mobile */
-window.addEventListener('bp-launch', function() {
-  if (typeof launch !== 'function') return;
-  // Ensure buildSweep has run so canvases are painted
-  if (typeof buildSweep === 'function') {
-    try { 
 /* ---- Auth tab switching (Sign Up / Log In) ---- */
 document.querySelectorAll('.auth-tab-btn').forEach(function(btn) {
   btn.addEventListener('click', function() {
@@ -131,9 +125,21 @@ document.querySelectorAll('.auth-tab-btn').forEach(function(btn) {
   });
 });
 
-buildSweep(); } catch(e) {}
+/* Bridge: bp-launch -> launch with leaf sweep on desktop, fast on mobile */
+window.addEventListener('bp-launch', function() {
+  if (typeof launch !== 'function') return;
+  // Ensure buildSweep has run so canvases are painted
+  if (typeof buildSweep === 'function') {
+    try { 
+      buildSweep();
+    } catch(e) {
+      console.error('buildSweep error:', e);
+    }
   }
-  launch(false); // false = use sweep animation on desktop
+  // Give canvas time to paint before starting animation
+  setTimeout(function() {
+    launch(false); // false = use sweep animation on desktop
+  }, 100);
 });
 
 const track = document.querySelector('.scroll-track');
@@ -527,39 +533,9 @@ function launch(fast = false) {
   window.addEventListener('wheel', blockScroll, { passive: false });
   window.addEventListener('touchmove', blockScroll, { passive: false });
 
-  // Ensure sweep canvases are freshly painted before animating
-  try { 
-/* ---- Auth tab switching (Sign Up / Log In) ---- */
-document.querySelectorAll('.auth-tab-btn').forEach(function(btn) {
-  btn.addEventListener('click', function() {
-    document.querySelectorAll('.auth-tab-btn').forEach(function(b) { b.classList.remove('is-active'); });
-    btn.classList.add('is-active');
-    var tab = btn.getAttribute('data-tab');
-    var signupForm = document.getElementById('form-signup');
-    var loginForm  = document.getElementById('form-login');
-    if (signupForm && loginForm) {
-      if (tab === 'signup') {
-        signupForm.classList.remove('is-hidden');
-        loginForm.classList.add('is-hidden');
-      } else {
-        loginForm.classList.remove('is-hidden');
-        signupForm.classList.add('is-hidden');
-      }
-    }
-  });
-});
-
-/* ---- Email form submit -> launch ---- */
-['form-signup','form-login'].forEach(function(id) {
-  var form = document.getElementById(id);
-  if (form) form.addEventListener('submit', function(e) {
-    e.preventDefault();
-    window.dispatchEvent(new CustomEvent('bp-launch'));
-  });
-});
-
-buildSweep(); } catch(e) {}
+  // Play the sweep animation
   setTimeout(playSweep, 300);
+  
   // Swap the scene underneath while the leaves cover the screen, and drop the
   // video layers so the sweep-out only has to composite the foliage.
   setTimeout(() => {
@@ -604,36 +580,6 @@ bindTapOrClick(document.getElementById('btn-quick-skip'), () => launch(true));
 bindTapOrClick(googleBtn, () => launch(false));
 bindTapOrClick(document.querySelector('.apple-btn'), () => launch(false));
 bindTapOrClick(document.querySelector('.auth-submit'), () => launch(false));
-
-
-/* ---- Auth tab switching (Sign Up / Log In) ---- */
-document.querySelectorAll('.auth-tab-btn').forEach(function(btn) {
-  btn.addEventListener('click', function() {
-    document.querySelectorAll('.auth-tab-btn').forEach(function(b) { b.classList.remove('is-active'); });
-    btn.classList.add('is-active');
-    var tab = btn.getAttribute('data-tab');
-    var signupForm = document.getElementById('form-signup');
-    var loginForm  = document.getElementById('form-login');
-    if (signupForm && loginForm) {
-      if (tab === 'signup') {
-        signupForm.classList.remove('is-hidden');
-        loginForm.classList.add('is-hidden');
-      } else {
-        loginForm.classList.remove('is-hidden');
-        signupForm.classList.add('is-hidden');
-      }
-    }
-  });
-});
-
-/* ---- Email form submit -> launch ---- */
-['form-signup','form-login'].forEach(function(id) {
-  var form = document.getElementById(id);
-  if (form) form.addEventListener('submit', function(e) {
-    e.preventDefault();
-    window.dispatchEvent(new CustomEvent('bp-launch'));
-  });
-});
 
 buildSweep();
 
