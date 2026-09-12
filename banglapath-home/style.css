@@ -464,11 +464,26 @@ body.is-launched .corner-skip-btn {
 .whiteout {
   position: fixed;
   inset: 0;
-  background: #fff;
+  background: #000;
   opacity: 0;
+  visibility: hidden;
   pointer-events: none;
   z-index: 20;
-  transition: opacity 0.45s ease-in;
+  transition: opacity 0.45s ease-in, visibility 0s ease 0.45s;
+}
+
+/* Show whiteout during app launch */
+body.is-launching .whiteout {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.45s ease-in, visibility 0s ease 0s;
+}
+
+/* Hide whiteout after launch complete */
+body.is-launched .whiteout { 
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease 0.2s, visibility 0s ease 0.5s;
 }
 
 .welcome {
