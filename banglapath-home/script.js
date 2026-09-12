@@ -13,8 +13,15 @@
     dots.forEach(d => d.classList.remove('active'));
     videos[index].classList.add('active');
     dots[index].classList.add('active');
-    videos[index].currentTime = 0;
-    videos[index].play().catch(() => {});
+    
+    // Play last 2 seconds of video
+    const video = videos[index];
+    if (video.duration && video.duration > 2) {
+      video.currentTime = video.duration - 2; // Start from 2 seconds before end
+    } else {
+      video.currentTime = 0;
+    }
+    video.play().catch(() => {});
     currentIndex = index;
   }
 
@@ -31,7 +38,24 @@
     });
   });
 
-  videos[0].play().catch(() => {});
+  // Initialize all videos to play last 2 seconds
+  videos.forEach(video => {
+    video.addEventListener('loadedmetadata', () => {
+      if (video.duration > 2) {
+        video.currentTime = video.duration - 2;
+      }
+    });
+  });
+  
+  // Start first video
+  const firstVideo = videos[0];
+  if (firstVideo.readyState >= 1) {
+    // Already loaded
+    if (firstVideo.duration > 2) {
+      firstVideo.currentTime = firstVideo.duration - 2;
+    }
+  }
+  firstVideo.play().catch(() => {});
   autoPlayTimer = setInterval(nextVideo, 2000);
 
   const getStartedBtn = document.getElementById('btn-get-started');
@@ -512,6 +536,8 @@ render();
 if (location.hash === '#home') {
   launch(true);
 }
+
+
 
 
 
