@@ -1,0 +1,31 @@
+{
+  "version": 2,
+  "name": "banglapath",
+  "builds": [
+    {
+      "src": "banglapath-home/server.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/chat",
+      "dest": "banglapath-home/server.js"
+    },
+    {
+      "src": "/hospital/(.*)",
+      "dest": "Hospital finding/dist/$1"
+    },
+    {
+      "src": "/book/(.*)",
+      "dest": "book/dist/$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "banglapath-home/$1"
+    }
+  ],
+  "env": {
+    "GEMINI_API_KEY": "@gemini-api-key"
+  }
+}
