@@ -773,6 +773,7 @@ select:focus-visible,
   min-height: 0;
   overflow: hidden;
   background: var(--panel-bg);
+  transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 /* drag-to-resize + hide */
@@ -1385,7 +1386,7 @@ select:focus-visible,
   right: 16px;
   bottom: 22px;
   transform: none;
-  width: auto;
+  width: calc(100% - 32px);
   height: 48px;
   z-index: 3;
   background: rgba(255, 255, 255, 0.24);
@@ -8654,7 +8655,7 @@ select:focus-visible,
     overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
-    padding-bottom: 8px;
+    padding-bottom: 90px;
   }
   .mh-scroll::-webkit-scrollbar { display: none; }
 
@@ -8818,6 +8819,13 @@ select:focus-visible,
   .mh-bubble p { margin: 0 0 6px; }
   .mh-bubble p:last-child { margin-bottom: 0; }
   .mh-bubble strong { font-weight: 700; color: #0f172a; }
+
+  /* RTL Support for Bengali */
+  .mh-bubble[lang="bn"],
+  .mh-bubble-rtl {
+    direction: rtl;
+    unicode-bidi: bidi-override;
+  }
 
   .mh-msg.from-bot .mh-bubble {
     background: #ffffff;
@@ -8995,7 +9003,7 @@ select:focus-visible,
 
   .mh-card-blurb {
     font-size: 10.5px;
-    color: rgba(255,255,255,0.82);
+    color: rgba(255,255,255,0.95);
     margin: 0 0 12px;
     line-height: 1.4;
     text-shadow: 0 1px 2px rgba(0,0,0,0.4);
@@ -9061,8 +9069,11 @@ select:focus-visible,
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
     border-top: 1px solid rgba(226,232,240,0.8);
-    position: sticky;
-    bottom: 66px;
+    position: fixed;
+    bottom: max(72px, calc(72px + env(safe-area-inset-bottom)));
+    left: 0;
+    right: 0;
+    width: 100%;
     z-index: 100;
     flex-shrink: 0;
     box-shadow: 0 -3px 12px rgba(0, 0, 0, 0.04);
@@ -9114,6 +9125,11 @@ select:focus-visible,
     flex-shrink: 0;
   }
 
+  .mh-mic-btn:focus-visible {
+    outline: 2px solid #15803d;
+    outline-offset: 2px;
+  }
+
   .mh-mic-btn:active { background: #f3f4f6; color: #1f2937; }
   .mh-mic-btn svg { width: 18px; height: 18px; }
 
@@ -9144,6 +9160,11 @@ select:focus-visible,
     flex-shrink: 0;
   }
 
+  .mh-send-btn:focus-visible {
+    outline: 2px solid #dcfce7;
+    outline-offset: 2px;
+  }
+
   .mh-send-btn:active {
     transform: scale(0.92);
     box-shadow: 0 2px 6px rgba(21, 128, 61, 0.25);
@@ -9164,11 +9185,12 @@ select:focus-visible,
     align-items: center;
     justify-content: space-around;
     background: rgba(255, 255, 255, 0.88);
-    backdrop-filter: blur(28px) saturate(200%);
-    -webkit-backdrop-filter: blur(28px) saturate(200%);
+    backdrop-filter: blur(12px) saturate(200%);
+    -webkit-backdrop-filter: blur(12px) saturate(200%);
     border: 1px solid rgba(255, 255, 255, 0.95);
     border-radius: 32px;
     padding: 6px 10px 6px;
+    padding-bottom: max(6px, env(safe-area-inset-bottom));
     flex-shrink: 0;
     box-shadow: 0 16px 36px -6px rgba(15, 23, 42, 0.14),
                 0 4px 14px -2px rgba(22, 101, 52, 0.08),
@@ -9214,6 +9236,11 @@ select:focus-visible,
     position: relative;
     user-select: none;
     -webkit-tap-highlight-color: transparent;
+  }
+
+  .mh-nav-item:focus-visible {
+    outline: 2px solid #15803d;
+    outline-offset: 2px;
   }
 
   .mh-nav-item svg {
@@ -9876,6 +9903,7 @@ select:focus-visible,
   min-height: 38px;
   word-break: break-word;
   transition: opacity 0.2s ease;
+  direction: rtl;
 }
 
 .trans-target-output.is-empty {
