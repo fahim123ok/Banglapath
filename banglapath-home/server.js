@@ -17,15 +17,19 @@ const PORT = Number(process.env.PORT) || 3000;
  * The rest are tried in order when one is rate-limited. */
 const MODELS = [
   ...(process.env.GEMINI_MODEL ? [process.env.GEMINI_MODEL] : []),
-  'gemini-3.6-flash',
-  'gemini-flash-latest',
-  'gemini-3.8-flash',
+  'gemini-3.6-flash',       // confirmed working
+  'gemini-3.7-flash',       // confirmed working
+  'gemini-3.8-flash',       // confirmed working
+  'gemini-flash-latest',    // confirmed working
+  'gemini-3.5-flash',       // confirmed working
+  'gemini-3.5-flash-lite',  // confirmed working
+  'gemini-3.1-flash-lite',  // confirmed working - lightest, good fallback
 ].filter((m, i, all) => all.indexOf(m) === i);
 
 // Thinking is configured differently across generations, and both families
 // otherwise burn the whole output budget before writing a word.
 const thinkingFor = (model) =>
-  model.startsWith('gemini-3') ? { thinkingLevel: 'low' } : (model.includes('2.5') ? { thinkingBudget: 512 } : undefined);
+  model.startsWith('gemini-3') ? { thinkingLevel: 'low' } : undefined;
 
 // Load a local .env if present, so `node server.js` just works.
 for (const envPath of [path.join(ROOT, '.env'), path.join(process.cwd(), '.env')]) {
@@ -241,11 +245,6 @@ KNOWLEDGE SCOPE:
       topP: 0.95,
       maxOutputTokens: 1200,
     },
-    tools: [
-      {
-        googleSearch: {},
-      },
-    ],
     systemInstruction: { parts: [{ text: safeSystemPrompt }] },
   };
 
@@ -253,9 +252,9 @@ KNOWLEDGE SCOPE:
   // bubble that says "502" is useless to a traveller — work down the models
   // before giving up.
   let last = 'Gemini did not answer.';
-  const deadline = Date.now() + 60000;
+  const deadline = Date.now() + 90000;
   for (let attempt = 0; attempt < MODELS.length + 1; attempt += 1) {
-    if (attempt) await new Promise((r) => setTimeout(r, 400));
+    if (attempt) await new Promise((r) => setTimeout(r, 7000)); // wait 7s between model retries
     if (Date.now() > deadline) break;
     const model = MODELS[Math.min(attempt, MODELS.length - 1)];
     const tc = thinkingFor(model);
@@ -618,6 +617,8 @@ http
     console.log(`BanglaPath on http://0.0.0.0:${PORT}`);
     if (!process.env.GEMINI_API_KEY) console.warn('GEMINI_API_KEY is not set — the chat will return 503.');
   });
+
+
 
 
 
