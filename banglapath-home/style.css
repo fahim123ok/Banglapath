@@ -518,12 +518,7 @@ body.is-launched .whiteout {
   opacity: 0.6;
 }
 
-body.is-launched .whiteout { opacity: 1; }
-/* Once the whiteout has fully faded in, stop compositing the video stage. */
-body.is-launched .stage {
-  visibility: hidden;
-  transition: visibility 0s linear 0.45s;
-}
+
 body.is-launched .welcome { opacity: 1; }
 body.is-launching { cursor: progress; }
 
