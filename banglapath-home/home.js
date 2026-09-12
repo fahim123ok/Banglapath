@@ -211,6 +211,34 @@ const BanglaPath = (() => {
     lastRequestTime = Date.now();
   };
 
+  /* ---------------- RETRY MECHANISM ---------------- */
+  const fetchWithRetry = async (url, options = {}, maxRetries = 3) => {
+    let lastError;
+
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        const response = await fetch(url, options);
+        if (response.ok) return response;
+
+        // If response is not ok, save error and retry
+        lastError = new Error(`HTTP ${response.status}: ${response.statusText}`);
+        if (response.status >= 400 && response.status < 500) {
+          // Client errors don't retry
+          throw lastError;
+        }
+      } catch (error) {
+        lastError = error;
+        if (attempt === maxRetries - 1) throw error;
+
+        // Exponential backoff: 1s, 2s, 4s
+        const delay = Math.pow(2, attempt) * 1000;
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+
+    throw lastError;
+  };
+
   /* ---------------- USER PROFILE ---------------- */
   const getUserProfile = () => {
     try {
@@ -357,7 +385,7 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
 
     // Preferred path: the bundled Node proxy keeps the API key off the client.
     try {
-      const res = await fetch(PROXY_URL, {
+      const res = await fetchWithRetry(PROXY_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ turns, systemPrompt: body.systemInstruction.parts[0].text }),
@@ -4683,19 +4711,9 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
       statusMsg.textContent = 'Translation complete';
     }
 
-    // ✅ AUTO-SPEAK: Speak the translation result automatically
-    if (transState.tgtText && window.speechSynthesis) {
-      try {
-        window.speechSynthesis.cancel();
-        const utterance = new SpeechSynthesisUtterance(transState.tgtText);
-        utterance.lang = transState.tgtLang === 'bn' ? 'bn-BD' : transState.tgtLang === 'en' ? 'en-US' : transState.tgtLang;
-        utterance.rate = 0.9;
-        utterance.volume = 1;
-        window.speechSynthesis.speak(utterance);
-      } catch(e) {
-        log.log('[Auto-speak skipped]', e);
-      }
-    }
+    // ✅ AUTO-SPEAK DISABLED: Only speak on manual trigger (speaker button)
+    // Auto-speaking on every keystroke is annoying and drains battery
+    // Users can tap the speaker button to hear pronunciation
   }
 
   // Core translation executor
