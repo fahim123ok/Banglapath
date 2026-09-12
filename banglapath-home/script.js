@@ -63,18 +63,11 @@
     getStartedBtn.addEventListener('click', () => {
       clearInterval(autoPlayTimer);
       carousel.classList.add('hidden');
-      
-      // Show tiger layer and scroll to auth
+      // startAutoScroll will be available after script.js finishes loading
+      // We dispatch a custom event that script.js listens for
       setTimeout(() => {
-        // Scroll to auth position smoothly
-        const track = document.querySelector('.scroll-track');
-        if (track) {
-          track.scrollTo({
-            top: window.innerHeight * 1.5,
-            behavior: 'smooth'
-          });
-        }
-      }, 800);
+        document.dispatchEvent(new CustomEvent('carousel-done'));
+      }, 600);
     });
   }
 
@@ -536,6 +529,7 @@ render();
 if (location.hash === '#home') {
   launch(true);
 }
+
 
 
 
