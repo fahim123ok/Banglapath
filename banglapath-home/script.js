@@ -1,84 +1,105 @@
-/* VIDEO CAROUSEL AUTO-PLAY */
-(function initCarousel() {
-  const carousel = document.getElementById('intro-carousel');
-  if (!carousel) return;
-  const videos = carousel.querySelectorAll('.carousel-video');
-  const dots = carousel.querySelectorAll('.dot');
-  let currentIndex = 0;
-  let autoPlayTimer = null;
+/* ============================================================
+   INTRO FLOW — no scroll, screen-to-screen transitions
+   Carousel → Tiger+Auth → Leaf sweep → App
+   ============================================================ */
+(function IntroFlow() {
+  var sc  = document.getElementById('screen-carousel');
+  var sa  = document.getElementById('screen-auth');
+  if (!sc) return;
 
-  function switchVideo(index) {
-    if (index < 0 || index >= videos.length) return;
-    videos.forEach(v => v.classList.remove('active'));
-    dots.forEach(d => d.classList.remove('active'));
-    videos[index].classList.add('active');
-    dots[index].classList.add('active');
-    
-    // Play last 2 seconds of video
-    const video = videos[index];
-    if (video.duration && video.duration > 2) {
-      video.currentTime = video.duration - 2; // Start from 2 seconds before end
-    } else {
-      video.currentTime = 0;
+  /* ---- carousel ---- */
+  var vids  = sc.querySelectorAll('.carousel-video');
+  var cdots = sc.querySelectorAll('.cdot');
+  var cur   = 0;
+  var tmr   = null;
+
+  function playLast2(v) {
+    function go() {
+      v.currentTime = v.duration > 2 ? v.duration - 2 : 0;
+      v.play().catch(function(){});
     }
-    video.play().catch(() => {});
-    currentIndex = index;
+    if (v.readyState >= 1) go();
+    else v.addEventListener('loadedmetadata', go, { once: true });
   }
 
-  function nextVideo() {
-    const next = (currentIndex + 1) % videos.length;
-    switchVideo(next);
+  function jumpTo(idx) {
+    vids[cur].classList.remove('is-active');
+    cdots[cur].classList.remove('is-active');
+    cur = (idx + vids.length) % vids.length;
+    vids[cur].classList.add('is-active');
+    cdots[cur].classList.add('is-active');
+    playLast2(vids[cur]);
   }
 
-  dots.forEach((dot, i) => {
-    dot.addEventListener('click', () => {
-      clearInterval(autoPlayTimer);
-      switchVideo(i);
-      autoPlayTimer = setInterval(nextVideo, 2000);
-    });
+  function startTimer() {
+    clearInterval(tmr);
+    tmr = setInterval(function() { jumpTo(cur + 1); }, 2000);
+  }
+
+  cdots.forEach(function(d, i) {
+    d.addEventListener('click', function() { jumpTo(i); startTimer(); });
   });
 
-  // Initialize all videos to play last 2 seconds
-  videos.forEach(video => {
-    video.addEventListener('loadedmetadata', () => {
-      if (video.duration > 2) {
-        video.currentTime = video.duration - 2;
+  playLast2(vids[0]);
+  startTimer();
+
+  /* ---- Get Started → tiger auth ---- */
+  var gsBtn = document.getElementById('btn-get-started');
+  if (gsBtn) gsBtn.addEventListener('click', function() {
+    clearInterval(tmr);
+    sc.style.transition = 'opacity 0.5s ease';
+    sc.style.opacity = '0';
+    setTimeout(function() {
+      sc.classList.add('is-hidden');
+      if (sa) {
+        sa.classList.remove('is-hidden');
+        sa.style.opacity = '0';
+        sa.style.transition = 'opacity 0.6s ease';
+        requestAnimationFrame(function() { sa.style.opacity = '1'; });
+        // start tiger video
+        var tv = sa.querySelector('.tiger-bg-video');
+        if (tv) tv.play().catch(function(){});
       }
+    }, 500);
+  });
+
+  /* ---- Skip → straight to app ---- */
+  var skipBtn = document.getElementById('btn-skip-to-app');
+  if (skipBtn) skipBtn.addEventListener('click', function() {
+    clearInterval(tmr);
+    sc.classList.add('is-hidden');
+    if (sa) sa.classList.add('is-hidden');
+    window.dispatchEvent(new CustomEvent('bp-launch'));
+  });
+
+  /* ---- Back button ---- */
+  var backBtn = document.getElementById('btn-auth-back');
+  if (backBtn) backBtn.addEventListener('click', function() {
+    if (sa) {
+      sa.style.opacity = '0';
+      setTimeout(function() {
+        sa.classList.add('is-hidden');
+        sc.classList.remove('is-hidden');
+        sc.style.opacity = '1';
+        jumpTo(0); startTimer();
+      }, 400);
+    }
+  });
+
+  /* ---- Google / Apple → leaf wipe → app ---- */
+  ['btn-google-signin','btn-apple-signin'].forEach(function(id) {
+    var btn = document.getElementById(id);
+    if (btn) btn.addEventListener('click', function() {
+      if (sa) sa.classList.add('is-hidden');
+      window.dispatchEvent(new CustomEvent('bp-launch'));
     });
   });
-  
-  // Start first video
-  const firstVideo = videos[0];
-  if (firstVideo.readyState >= 1) {
-    // Already loaded
-    if (firstVideo.duration > 2) {
-      firstVideo.currentTime = firstVideo.duration - 2;
-    }
-  }
-  firstVideo.play().catch(() => {});
-  autoPlayTimer = setInterval(nextVideo, 2000);
-
-  const getStartedBtn = document.getElementById('btn-get-started');
-  if (getStartedBtn) {
-    getStartedBtn.addEventListener('click', () => {
-      clearInterval(autoPlayTimer);
-      carousel.classList.add('hidden');
-      // startAutoScroll will be available after script.js finishes loading
-      // We dispatch a custom event that script.js listens for
-      setTimeout(() => {
-        document.dispatchEvent(new CustomEvent('carousel-done'));
-      }, 600);
-    });
-  }
-
-  const skipIntroBtn = document.getElementById('btn-skip-intro');
-  if (skipIntroBtn) {
-    skipIntroBtn.addEventListener('click', () => {
-      clearInterval(autoPlayTimer);
-      carousel.classList.add('hidden');
-    });
-  }
 })();
+
+/* Bridge: bp-launch fires the existing launch() which does the leaf sweep */
+window.addEventListener('bp-launch', function() {
+  if (typeof launch === 'function') launch();
+});
 
 const track = document.querySelector('.scroll-track');
 const tigerLayer = document.querySelector('.tiger-layer');
@@ -419,6 +440,9 @@ function launch(fast = false) {
   if (launched) return;
   launched = true;
   cancelAutoScroll();
+  // Hide new intro screens if still visible
+  document.getElementById('screen-carousel')?.classList.add('is-hidden');
+  document.getElementById('screen-auth')?.classList.add('is-hidden');
 
   // Capture user name / email if provided
   const nameVal = document.querySelector('input[name="name"]')?.value.trim();
@@ -438,8 +462,9 @@ function launch(fast = false) {
     localStorage.setItem('bp_launched', 'true');
   } catch (err) {}
 
-  auth.classList.add('is-dismissed');
-  auth.setAttribute('aria-hidden', 'true');
+  if(auth) auth.classList.add('is-dismissed');
+  if(auth) auth.setAttribute('aria-hidden','true');
+  // aria-hidden set above
 
   const revealMobileNav = () => {
     const mobileNav = document.querySelector('.mh-bottom-nav');
@@ -529,6 +554,8 @@ render();
 if (location.hash === '#home') {
   launch(true);
 }
+
+
 
 
 
