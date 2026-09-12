@@ -17,9 +17,9 @@ const PORT = Number(process.env.PORT) || 3000;
  * The rest are tried in order when one is rate-limited. */
 const MODELS = [
   ...(process.env.GEMINI_MODEL ? [process.env.GEMINI_MODEL] : []),
-  'gemini-3.6-flash',
-  'gemini-flash-latest',
-  'gemini-3.8-flash',
+  'gemini-2.5-flash',
+  'gemini-2.5-flash-lite',
+  'gemini-2.0-flash',
 ].filter((m, i, all) => all.indexOf(m) === i);
 
 // Thinking is configured differently across generations, and both families
@@ -315,43 +315,8 @@ KNOWLEDGE SCOPE:
     return json(res, 200, { reply: out.reply, places: out.places.slice(0, 2) });
   }
 
-  // If all models failed or were exhausted, provide an intelligent local response based on user prompt
-  const lastUserText = sanitizedContents[sanitizedContents.length - 1]?.parts[0]?.text || '';
-  const lower = lastUserText.toLowerCase();
-
-  let fallbackReply = '';
-  let fallbackPlaces = [];
-
-  if (lower.includes('food') || lower.includes('eat') || lower.includes('biryani') || lower.includes('kacchi') || lower.includes('khabar')) {
-    fallbackReply = `Bangladesh is a paradise for food lovers! Here are the must-try culinary experiences:
-1. **Old Dhaka Kacchi Biryani & Morog Polao**: Fragrant chinigura or basmati rice layered with spiced mutton/chicken, potatoes, and boiled egg, served with refreshing Borhani.
-2. **Chittagong Mezban Beef & Kala Bhuna**: Slow-cooked beef caramelized in mustard oil, radhuni seeds, and ground spices.
-3. **Padma Shorshe Ilish**: Tender Hilsa fish stewed in fresh mustard paste, green chilies, and pure mustard oil.
-4. **Winter Pitha**: Steamed Bhapa Pitha (rice flour, jaggery, coconut) and delicate Patishapta crepes.
-5. **Sweets**: Bogura's authentic Curtis curd (Mishti Doi) and Comilla's Rasomalai!`;
-    fallbackPlaces = ['kacchi-biryani', 'mezban-beef'];
-  } else if (lower.includes('sylhet') || lower.includes('tea') || lower.includes('ratargul') || lower.includes('jaflong')) {
-    fallbackReply = `Sylhet is the serene emerald crown of Bangladesh!
-• **Ratargul Freshwater Swamp Forest**: Glide through submerged koroch and hijol trees in quiet wooden canoes.
-• **Sreemangal Tea Estates**: Endless rolling hills covered in lush green tea carpets, Lawachara Rainforest, and the legendary 7-layer tea at Nilkantha Tea Cabin.
-• **Jaflong & Bichnakandi**: Crystal-clear mountain streams cascading down from the Meghalaya hills over smooth river pebbles.
-Best time to explore: October through March for cool breezes, or monsoon (July-September) for lush waterfalls!`;
-    fallbackPlaces = ['ratargul-forest', 'sreemangal-tea'];
-  } else if (lower.includes('beach') || lower.includes('sea') || lower.includes('cox') || lower.includes('saint') || lower.includes('inani')) {
-    fallbackReply = `The coastal beauty of Bangladesh is unmatched:
-• **Cox's Bazar**: The longest unbroken natural sea beach in the world (120 km), with golden sunsets at Laboni and gentle waves at Kolatoli.
-• **Marine Drive & Inani**: Drive between towering hills on one side and coral beaches on the other, heading toward Himchari's waterfalls.
-• **Saint Martin's Island (Narikel Jinjira)**: Bangladesh's only coral island with turquoise water, coconut groves, and fresh grilled red snapper.`;
-    fallbackPlaces = ['coxs-bazar-beach', 'saint-martins-island'];
-  } else {
-    fallbackReply = `Assalamu alaikum! Welcome to BanglaPath AI, your companion for exploring Bangladesh:
-• **Must-visit destinations**: The untouched mangrove wilderness of Sundarbans, the rolling clouds of Sajek Valley, serene tea gardens of Sreemangal, and historic Old Dhaka.
-• **Local tip**: Travel between November and February for the coolest and most pleasant weather.
-Feel free to ask about any of the 64 districts, authentic traditional foods, or custom itineraries!`;
-    fallbackPlaces = ['sajek-valley', 'sundarbans-mangroves'];
-  }
-
-  return json(res, 200, { reply: fallbackReply, places: fallbackPlaces });
+  // All models failed - return error so client shows proper error message
+  return json(res, 503, { error: last || 'AI service temporarily unavailable. Please try again in a moment.' });
 }
 
 const TRANSLATE_CACHE = new Map();
@@ -653,6 +618,7 @@ http
     console.log(`BanglaPath on http://0.0.0.0:${PORT}`);
     if (!process.env.GEMINI_API_KEY) console.warn('GEMINI_API_KEY is not set — the chat will return 503.');
   });
+
 
 
 
