@@ -38,6 +38,9 @@
         var p = nextVid.play();
         if (p) p.catch(function(){});
       }
+      // ✅ PRELOAD NEXT VIDEO to eliminate lag
+      var nextNextIdx = (cur + 1) % vids.length;
+      vids[nextNextIdx].load();
     } catch(e) {}
   }
 

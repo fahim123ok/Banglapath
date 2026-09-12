@@ -4440,6 +4440,20 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
     if (statusMsg) {
       statusMsg.textContent = 'Translation complete';
     }
+
+    // ✅ AUTO-SPEAK: Speak the translation result automatically
+    if (transState.tgtText && window.speechSynthesis) {
+      try {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(transState.tgtText);
+        utterance.lang = transState.tgtLang === 'bn' ? 'bn-BD' : transState.tgtLang === 'en' ? 'en-US' : transState.tgtLang;
+        utterance.rate = 0.9;
+        utterance.volume = 1;
+        window.speechSynthesis.speak(utterance);
+      } catch(e) {
+        console.log('[Auto-speak skipped]', e);
+      }
+    }
   }
 
   // Core translation executor
@@ -7767,33 +7781,40 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
       row.innerHTML = places
         .map((id) => byId.get(id))
         .filter(Boolean)
-        .map((p) => `
-          <button class="mh-place-card" type="button" data-id="${p.id}" aria-label="${mhEsc(p.name)}, ${mhEsc(p.district)}">
+        .map((p) => {
+          // ✅ FIX 9: Support both places and foods
+          const isFood = p.isFood || p.type === 'food';
+          const badgeIcon = isFood ? '🍽️' : '★';
+          const badgeText = isFood ? (p.foodType || 'Traditional Food') : p.tag;
+          
+          return `
+          <button class="mh-place-card ${isFood ? 'is-food' : ''}" type="button" data-id="${p.id}" aria-label="${mhEsc(p.name)}, ${mhEsc(p.district || p.origin || '')}">
             <img src="${mhEsc(p.image)}" alt="${mhEsc(p.name)}" loading="lazy" />
             <div class="mh-card-grad"></div>
             <div class="mh-card-top">
               <span class="mh-card-badge">
-                <span class="mh-card-badge-icon">★</span>
-                ${mhEsc(p.tag)}
+                <span class="mh-card-badge-icon">${badgeIcon}</span>
+                ${mhEsc(badgeText)}
               </span>
               <span class="mh-card-rating">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3.2 2.7 5.6 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1L3.2 9.7l6.1-.9z"/></svg>
-                ${p.rating}
+                ${p.rating || '4.5'}
               </span>
             </div>
             <div class="mh-card-bottom">
               <h3 class="mh-card-name">${mhEsc(p.name)}</h3>
-              <p class="mh-card-blurb">${mhEsc(p.blurb)}</p>
+              <p class="mh-card-blurb">${mhEsc(p.blurb || p.description || '')}</p>
               <div class="mh-card-actions">
                 <button class="mh-card-explore" type="button" data-explore="${p.id}">
-                  Explore
+                  ${isFood ? 'View Recipe' : 'Explore'}
                 </button>
                 <button class="mh-card-arrow" type="button" data-explore="${p.id}" aria-label="Open ${mhEsc(p.name)}">
                   <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
                 </button>
               </div>
             </div>
-          </button>`)
+          </button>`;
+        })
         .join('');
 
       row.hidden = false;
@@ -7914,6 +7935,27 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
       btn.addEventListener('click', () => {
         const view = btn.dataset.mhView;
         if (!view) return;
+        
+        // ✅ EXPLORE TAB FIX: Show explore page, not chatbot
+        if (view === 'explore' && window.innerWidth <= 768) {
+          const appEl = document.getElementById('app');
+          const mhEl = document.getElementById('mobile-home');
+          
+          if (appEl) {
+            // Hide mobile home, show desktop explore page
+            if (mhEl) mhEl.style.display = 'none';
+            appEl.style.setProperty('display', 'flex', 'important');
+            appEl.hidden = false;
+            setView('explore');
+            
+            // Update nav active state
+            document.querySelectorAll('.mh-nav-item').forEach((b) =>
+              b.classList.toggle('is-active', b.dataset.mhView === 'explore')
+            );
+          }
+          return;
+        }
+        
         setView(view);
       });
     });
