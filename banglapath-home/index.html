@@ -58,12 +58,17 @@
     <div class="auth-logo">
       <span class="brand-a">Bangla</span><span class="brand-b">Path</span>
     </div>
-    <h2 class="auth-float-title">Start your journey</h2>
-    <p class="auth-float-sub">Explore 166 places across Bangladesh with your AI guide</p>
 
+    <!-- Tab toggle -->
+    <div class="auth-tabs-row">
+      <button class="auth-tab-btn is-active" data-tab="signup" type="button">Sign Up</button>
+      <button class="auth-tab-btn" data-tab="login" type="button">Log In</button>
+    </div>
+
+    <!-- Social buttons -->
     <div class="auth-float-social">
       <button class="auth-google-btn" id="btn-google-signin" type="button">
-        <svg viewBox="0 0 48 48" width="20" height="20" aria-hidden="true">
+        <svg viewBox="0 0 48 48" width="18" height="18" aria-hidden="true">
           <path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.6l6.7-6.7C35.6 2.6 30.2 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.8 6.1C12.3 13.2 17.6 9.5 24 9.5z"/>
           <path fill="#4285F4" d="M46.1 24.6c0-1.6-.1-3.2-.4-4.6H24v9.1h12.4c-.5 2.9-2.2 5.3-4.7 7l7.6 5.9c4.4-4.1 6.8-10.1 6.8-17.4z"/>
           <path fill="#FBBC05" d="M10.4 28.7a14.6 14.6 0 0 1 0-9.4l-7.8-6.1a24 24 0 0 0 0 21.6l7.8-6.1z"/>
@@ -72,12 +77,29 @@
         Continue with Google
       </button>
       <button class="auth-apple-btn" id="btn-apple-signin" type="button">
-        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true">
           <path d="M16.4 12.8c0-2.4 2-3.6 2.1-3.6-1.1-1.7-2.9-1.9-3.6-1.9-1.5-.2-3 .9-3.7.9-.8 0-2-.9-3.3-.9-1.7 0-3.3 1-4.1 2.5-1.8 3.1-.5 7.6 1.3 10.1.9 1.2 1.9 2.6 3.2 2.5 1.3-.1 1.8-.8 3.3-.8s2 .8 3.3.8 2.2-1.2 3.1-2.4c1-1.4 1.4-2.7 1.4-2.8-.1 0-2.9-1.1-2.9-4.4zM14.1 4.9c.7-.9 1.2-2.1 1-3.3-1 0-2.3.7-3 1.6-.7.8-1.3 2-1.1 3.2 1.1.1 2.3-.6 3.1-1.5z"/>
         </svg>
         Continue with Apple
       </button>
     </div>
+
+    <div class="auth-divider-row"><span>or</span></div>
+
+    <!-- Email form — Sign Up -->
+    <form class="auth-email-form" id="form-signup" novalidate>
+      <input type="text" name="name" placeholder="Full name" autocomplete="name" class="auth-input" required />
+      <input type="email" name="email" placeholder="Email address" autocomplete="email" class="auth-input" required />
+      <input type="password" name="password" placeholder="Password" autocomplete="new-password" class="auth-input" required />
+      <button type="submit" class="auth-submit-btn">Create Account</button>
+    </form>
+
+    <!-- Email form — Log In (hidden by default) -->
+    <form class="auth-email-form is-hidden" id="form-login" novalidate>
+      <input type="email" name="email" placeholder="Email address" autocomplete="email" class="auth-input" required />
+      <input type="password" name="password" placeholder="Password" autocomplete="current-password" class="auth-input" required />
+      <button type="submit" class="auth-submit-btn">Log In</button>
+    </form>
 
     <p class="auth-float-fine">By continuing you agree to our Terms &amp; Privacy Policy</p>
     <button class="auth-back-btn" id="btn-auth-back" type="button">&#x2190; Back</button>
@@ -510,6 +532,7 @@
 </script>
 </body>
 </html>
+
 
 
 
