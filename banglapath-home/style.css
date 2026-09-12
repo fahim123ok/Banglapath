@@ -599,7 +599,7 @@ body:not(.is-launched) #app {
 .sweep {
   position: fixed;
   inset: 0;
-  z-index: 30;
+  z-index: 9500;
   overflow: hidden;
   pointer-events: none;
   visibility: hidden;
@@ -1067,3 +1067,4 @@ body.carousel-done .tiger-layer {
     to   { opacity: 1; transform: translate(-50%, -50%); }
   }
 }
+
