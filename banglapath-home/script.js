@@ -27,18 +27,30 @@
     dot.addEventListener('click', () => {
       clearInterval(autoPlayTimer);
       switchVideo(i);
-      autoPlayTimer = setInterval(nextVideo, 5000);
+      autoPlayTimer = setInterval(nextVideo, 2000);
     });
   });
 
   videos[0].play().catch(() => {});
-  autoPlayTimer = setInterval(nextVideo, 5000);
+  autoPlayTimer = setInterval(nextVideo, 2000);
 
   const getStartedBtn = document.getElementById('btn-get-started');
   if (getStartedBtn) {
     getStartedBtn.addEventListener('click', () => {
       clearInterval(autoPlayTimer);
       carousel.classList.add('hidden');
+      
+      // Show tiger layer and scroll to auth
+      setTimeout(() => {
+        // Scroll to auth position smoothly
+        const track = document.querySelector('.scroll-track');
+        if (track) {
+          track.scrollTo({
+            top: window.innerHeight * 1.5,
+            behavior: 'smooth'
+          });
+        }
+      }, 800);
     });
   }
 
@@ -500,5 +512,8 @@ render();
 if (location.hash === '#home') {
   launch(true);
 }
+
+
+
 
 

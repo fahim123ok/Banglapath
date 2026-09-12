@@ -656,7 +656,7 @@ body:not(.is-launched) #app {
   height: 100%;
   object-fit: cover;
   opacity: 0;
-  transition: opacity 1.2s ease;
+  transition: opacity 0.6s ease;
 }
 
 .carousel-video.active {
@@ -698,5 +698,18 @@ body:not(.is-launched) #app {
 /* Show tiger layer after carousel hides */
 .intro-carousel.hidden ~ .stage .tiger-layer {
   opacity: 1;
+}
+
+
+
+/* Tiger layer hidden until carousel completes */
+.tiger-layer {
+  opacity: 0 !important;
+  transition: opacity 0.8s ease;
+}
+
+.intro-carousel.hidden ~ * .tiger-layer,
+body.carousel-done .tiger-layer {
+  opacity: 1 !important;
 }
 
