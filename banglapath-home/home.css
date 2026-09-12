@@ -2138,13 +2138,6 @@ select:focus-visible,
   width: 18px;
   height: 18px;
 }
-  color: #fff;
-  background: transparent;
-  border: 0;
-  border-radius: 50%;
-  cursor: pointer;
-  transition: background 0.2s ease;
-}
 
 .disc-go svg { width: 18px; height: 18px; stroke-width: 2.2; }
 .disc-go:hover { background: rgba(255, 255, 255, 0.18); }
