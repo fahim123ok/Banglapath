@@ -252,6 +252,52 @@
   50% { opacity: 0.5; transform: translate(-50%, -50%) scale(1.2); }
 }
 
+/* Card action buttons */
+.card-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.card-heart-btn,
+.card-share-btn {
+  background: rgba(255, 255, 255, 0.9);
+  border: none;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 0;
+}
+
+.card-heart-btn svg,
+.card-share-btn svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: #6b7280;
+  stroke-width: 2;
+}
+
+.card-heart-btn:hover,
+.card-share-btn:hover {
+  background: white;
+  transform: scale(1.1);
+}
+
+.card-heart-btn.is-saved svg {
+  fill: #ef4444;
+  stroke: #ef4444;
+}
+
+.card-share-btn:hover svg {
+  stroke: #047857;
+}
+
 :root {
   --z-base: 1;
   --z-dropdown: 1000;
@@ -297,6 +343,34 @@
 
   --shadow-card: 0 1px 2px rgba(16, 24, 40, 0.04), 0 8px 24px rgba(16, 24, 40, 0.06);
   --shadow-pop:  0 12px 34px rgba(16, 24, 40, 0.14);
+}
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ink:       #f1f5f9;
+    --body:      #cbd5e1;
+    --muted:     #94a3b8;
+    --faint:     #64748b;
+
+    --line:      #334155;
+    --line-soft: #1e293b;
+    --surface:   #0f172a;
+    --rail-bg:   #1e293b;
+    --field-bg:  #1e293b;
+    --panel-bg:  #1e293b;
+
+    --green-100: #14532d;
+    --green-50:  #114a31;
+    --green-900: #dcfce7;
+    --green-800: #dcfce7;
+
+    --blue-100:  #1e3a8a;
+    --blue-900:  #dbeafe;
+
+    --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.4);
+    --shadow-pop:  0 12px 34px rgba(0, 0, 0, 0.5);
+  }
 }
 
 /* The intro is 600vh tall; once the home screen owns the viewport it has to

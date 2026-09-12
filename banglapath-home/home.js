@@ -258,6 +258,46 @@ const BanglaPath = (() => {
     });
   };
 
+  /* ---------------- BACK BUTTON HANDLING ---------------- */
+  window.addEventListener('popstate', (event) => {
+    if (event.state && event.state.view) {
+      setViewInternal(event.state.view);
+    } else {
+      setViewInternal('home');
+    }
+  });
+
+  // Internal setView without history management
+  function setViewInternal(view) {
+    const isMobile = window.innerWidth <= 768;
+    const mhEl = document.getElementById('mobile-home');
+    const appEl = document.getElementById('app');
+    if (mhEl && isMobile) {
+      if (view === 'home') {
+        mhEl.style.display = 'flex';
+        if (appEl) { appEl.style.display = 'none'; appEl.hidden = true; }
+      } else {
+        mhEl.style.display = 'none';
+        if (appEl) { appEl.style.setProperty('display', 'flex', 'important'); appEl.hidden = false; }
+      }
+    }
+
+    $('#page-home').hidden = view !== 'home';
+    $('#page-discover').hidden = view !== 'explore';
+    $('#page-planner').hidden = view !== 'planner';
+    $('#page-assistant').hidden = view !== 'assistant';
+    $('#page-translator').hidden = view !== 'translator';
+    $('#page-saved').hidden = view !== 'saved';
+    if ($('#page-profile')) $('#page-profile').hidden = view !== 'profile';
+    $('#page-place').hidden = view !== 'place';
+    $('#app').classList.toggle('on-discover', view === 'explore');
+    $('#app').classList.toggle('on-planner', view === 'planner');
+    $('#app').classList.toggle('on-assistant', view === 'assistant');
+    $('#app').classList.toggle('on-translator', view === 'translator');
+    $('#app').classList.toggle('on-saved', view === 'saved');
+    $('#app').classList.toggle('on-profile', view === 'profile');
+  }
+
   /* ---------------- persona ---------------- */
 
   const getSystemDateInfo = () => {
@@ -711,9 +751,79 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
     );
   }
 
+  /* ---------------- SAVED PLACES MANAGEMENT ---------------- */
+  function isPlaceSaved(placeId) {
+    try {
+      const saved = JSON.parse(localStorage.getItem('banglapath_saved_places') || '[]');
+      return saved.includes(placeId);
+    } catch {
+      return false;
+    }
+  }
+
+  function togglePlaceSaved(placeId) {
+    try {
+      let saved = JSON.parse(localStorage.getItem('banglapath_saved_places') || '[]');
+      if (saved.includes(placeId)) {
+        saved = saved.filter(id => id !== placeId);
+        showToast('Removed from saved');
+      } else {
+        saved.push(placeId);
+        showToast('Saved to favorites');
+      }
+      localStorage.setItem('banglapath_saved_places', JSON.stringify(saved));
+      return !saved.includes(placeId); // Returns true if removed, false if added
+    } catch (e) {
+      log.error('Failed to toggle saved place:', e);
+      return false;
+    }
+  }
+
+  function sharePlace(placeId) {
+    const place = byId.get(placeId);
+    if (!place) return;
+
+    const shareData = {
+      title: place.name,
+      text: `Check out ${place.name} in ${place.district}, Bangladesh! ${place.blurb}`,
+      url: window.location.href
+    };
+
+    if (navigator.share) {
+      navigator.share(shareData).catch((err) => {
+        log.log('Share failed:', err);
+        // Fallback: copy to clipboard
+        copyToClipboard(`${shareData.title}\n${shareData.text}\n${shareData.url}`);
+      });
+    } else {
+      // Fallback: copy to clipboard
+      copyToClipboard(`${shareData.title}\n${shareData.text}\n${shareData.url}`);
+    }
+  }
+
+  function copyToClipboard(text) {
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(text).then(() => {
+        showToast('Copied to clipboard!');
+      }).catch(() => {
+        showToast('Failed to copy');
+      });
+    } else {
+      // Fallback for older browsers
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+      showToast('Copied to clipboard!');
+    }
+  }
+
   /* ---------------- recommended rail ---------------- */
 
   function cardMarkup(p) {
+    const isSaved = isPlaceSaved(p.id);
     return `
       <button class="place-card" type="button" data-id="${p.id}" aria-label="${esc(p.name)}, ${esc(p.district)}">
         <img src="${p.image}" alt="${esc(p.name)}" loading="lazy" />
@@ -721,6 +831,14 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
         <div class="card-gradient-bottom"></div>
         <div class="card-top-row">
           <span class="card-tag-pill">${tagIcon(p.icon)}<span>${esc(p.tag)}</span></span>
+          <div class="card-actions">
+            <button type="button" class="card-heart-btn ${isSaved ? 'is-saved' : ''}" data-save="${p.id}" aria-label="${isSaved ? 'Remove from saved' : 'Save to favorites'}" title="${isSaved ? 'Remove from saved' : 'Save to favorites'}">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+            </button>
+            <button type="button" class="card-share-btn" data-share="${p.id}" aria-label="Share place" title="Share place">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z"/></svg>
+            </button>
+          </div>
           <span class="card-rate-pill">
             <svg viewBox="0 0 24 24" class="card-star" aria-hidden="true"><path d="m12 3.2 2.7 5.6 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1L3.2 9.7l6.1-.9z"/></svg>
             <b>${p.rating}</b>
@@ -1037,33 +1155,17 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
   }
 
   function setView(view) {
-    const isMobile = window.innerWidth <= 768;
-    const mhEl = document.getElementById('mobile-home');
-    const appEl = document.getElementById('app');
-    if (mhEl && isMobile) {
-      if (view === 'home') {
-        mhEl.style.display = 'flex';
-        if (appEl) { appEl.style.display = 'none'; appEl.hidden = true; }
-      } else {
-        mhEl.style.display = 'none';
-        if (appEl) { appEl.style.setProperty('display', 'flex', 'important'); appEl.hidden = false; }
-      }
-    }
+    setViewInternal(view);
 
-    $('#page-home').hidden = view !== 'home';
-    $('#page-discover').hidden = view !== 'explore';
-    $('#page-planner').hidden = view !== 'planner';
-    $('#page-assistant').hidden = view !== 'assistant';
-    $('#page-translator').hidden = view !== 'translator';
-    $('#page-saved').hidden = view !== 'saved';
-    if ($('#page-profile')) $('#page-profile').hidden = view !== 'profile';
-    $('#page-place').hidden = view !== 'place';
-    $('#app').classList.toggle('on-discover', view === 'explore');
-    $('#app').classList.toggle('on-planner', view === 'planner');
-    $('#app').classList.toggle('on-assistant', view === 'assistant');
-    $('#app').classList.toggle('on-translator', view === 'translator');
-    $('#app').classList.toggle('on-saved', view === 'saved');
-    $('#app').classList.toggle('on-profile', view === 'profile');
+    // Update URL and history state for back button support (avoid duplicate entries)
+    const currentState = window.history.state;
+    if (!currentState || currentState.view !== view) {
+      const state = { view };
+      const url = new URL(window.location);
+      url.searchParams.set('view', view);
+      window.history.pushState(state, '', url);
+    }
+  }
     $('#app').classList.toggle('on-place', view === 'place');
     const sr = $('#search-results');
     if (sr) sr.hidden = true;
@@ -7558,6 +7660,24 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
     // Add haptic feedback to critical buttons
     document.querySelectorAll('.send, .place-card, .rail-item').forEach(el => {
       el.addEventListener('click', () => triggerHaptic([10]));
+    });
+
+    // Card heart button (save to favorites)
+    document.addEventListener('click', (e) => {
+      const heartBtn = e.target.closest('.card-heart-btn');
+      if (heartBtn && heartBtn.dataset.save) {
+        e.stopPropagation();
+        const wasSaved = togglePlaceSaved(heartBtn.dataset.save);
+        heartBtn.classList.toggle('is-saved', !wasSaved);
+        triggerHaptic([10]);
+      }
+
+      const shareBtn = e.target.closest('.card-share-btn');
+      if (shareBtn && shareBtn.dataset.share) {
+        e.stopPropagation();
+        sharePlace(shareBtn.dataset.share);
+        triggerHaptic([10]);
+      }
     });
 
     $('#chat-reset').addEventListener('click', resetChat);
