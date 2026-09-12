@@ -459,9 +459,9 @@ function playSweep() {
     side.animate(
       [
         { transform: out(-4, 5), offset: 0, easing: 'cubic-bezier(0.22, 0.61, 0.36, 1)' },
-        { transform: `translate3d(${dir * -3}%, 1%, 0) rotate(${dir * -1.2}deg)`, offset: 0.34, easing: 'cubic-bezier(0.4, 0, 0.5, 1)' },
-        { transform: 'translate3d(0, 0, 0) rotate(0deg)', offset: 0.46, easing: 'ease-in-out' },
-        { transform: `translate3d(0, -1%, 0) rotate(${dir * 0.8}deg)`, offset: 0.6, easing: 'cubic-bezier(0.5, 0, 0.75, 0.35)' },
+        { transform: `translate3d(${dir * -8}%, 1%, 0) rotate(${dir * -1.2}deg)`, offset: 0.34, easing: 'cubic-bezier(0.4, 0, 0.5, 1)' },
+        { transform: `translate3d(${dir * -5}%, 0, 0) rotate(0deg)`, offset: 0.46, easing: 'ease-in-out' },
+        { transform: `translate3d(${dir * -5}%, -1%, 0) rotate(${dir * 0.8}deg)`, offset: 0.6, easing: 'cubic-bezier(0.5, 0, 0.75, 0.35)' },
         { transform: out(2, 6), offset: 1 }
       ],
       {

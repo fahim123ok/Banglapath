@@ -617,6 +617,8 @@ body:not(.is-launched) #app {
   overflow: hidden;
   pointer-events: none;
   visibility: hidden;
+  /* Dark fill so any gap between leaves shows dark, not white */
+  background: #050a04;
 }
 
 .sweep.is-active { visibility: visible; }
@@ -625,13 +627,14 @@ body:not(.is-launched) #app {
   position: absolute;
   top: 0;
   bottom: 0;
-  width: 82vw;
+  /* 60vw each = 20vw overlap in the centre — no white gap possible */
+  width: 60vw;
   will-change: transform;
   backface-visibility: hidden;
 }
 
-.sweep-left { left: 0; transform: translate3d(-115%, 0, 0); }
-.sweep-right { right: 0; transform: translate3d(115%, 0, 0); }
+.sweep-left { left: 0; transform: translate3d(-118%, 0, 0); }
+.sweep-right { right: 0; transform: translate3d(118%, 0, 0); }
 
 /* Edges are pre-feathered in the -soft assets, so no CSS mask is needed. */
 .sweep-canvas {
