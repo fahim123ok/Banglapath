@@ -151,7 +151,7 @@ function readBody(req, limit = 256 * 1024) {
 }
 
 async function chat(req, res) {
-  const key = process.env.GEMINI_API_KEY || "AIzaSyAQ.Ab8RN6L-CKYaQllcSjQO5RLp3jl-EFVYM9yMTbVcJMxrUGU_2Q";
+  const key = process.env.GEMINI_API_KEY || "";
   if (!key) return json(res, 503, { error: 'GEMINI_API_KEY is not set on the server.' });
 
   let payload;
@@ -264,13 +264,13 @@ KNOWLEDGE SCOPE:
     } else {
       delete body.generationConfig.thinkingConfig;
     }
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(key)}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
 
     let upstream;
     try {
       upstream = await fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
         body: JSON.stringify(body),
         // Cap each try so a slow model still leaves room for the next one.
         signal: AbortSignal.timeout(Math.max(5000, Math.min(25000, deadline - Date.now()))),
@@ -377,7 +377,7 @@ async function translate(req, res) {
     return json(res, 200, { translatedText: cleanText, pronunciation: '' });
   }
 
-  const key = process.env.GEMINI_API_KEY || "AIzaSyAQ.Ab8RN6L-CKYaQllcSjQO5RLp3jl-EFVYM9yMTbVcJMxrUGU_2Q";
+  const key = process.env.GEMINI_API_KEY || "";
   let last = 'Translation failed.';
 
   if (key) {
@@ -417,11 +417,11 @@ Respond in JSON format:
         delete body.generationConfig.thinkingConfig;
       }
 
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(key)}`;
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
       try {
         const upstream = await fetch(url, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
           body: JSON.stringify(body),
           signal: AbortSignal.timeout(8000),
         });
@@ -653,4 +653,6 @@ http
     console.log(`BanglaPath on http://0.0.0.0:${PORT}`);
     if (!process.env.GEMINI_API_KEY) console.warn('GEMINI_API_KEY is not set — the chat will return 503.');
   });
+
+
 
