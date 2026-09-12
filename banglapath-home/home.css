@@ -9058,6 +9058,7 @@ select:focus-visible,
     letter-spacing: 0.01em;
   }
 
+  .mh-card-explore { display: none !important; }
   .mh-card-explore:active { background: #166534; }
 
   .mh-card-arrow {
