@@ -14,6 +14,133 @@ const BanglaPath = (() => {
 
   const $ = (sel) => document.querySelector(sel);
 
+  /* ---------------- GLOBAL ERROR HANDLER ---------------- */
+  const showErrorUI = (message) => {
+    const existingError = document.getElementById('bp-error-boundary');
+    if (existingError) existingError.remove();
+
+    const errorUI = document.createElement('div');
+    errorUI.id = 'bp-error-boundary';
+    errorUI.style.cssText = `
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background: rgba(255, 255, 255, 0.98);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      text-align: center;
+      font-family: Poppins, sans-serif;
+    `;
+
+    errorUI.innerHTML = `
+      <div style="max-width: 400px;">
+        <div style="font-size: 48px; margin-bottom: 16px;">⚠️</div>
+        <h2 style="color: #1f2937; margin-bottom: 12px;">Oops! Something went wrong</h2>
+        <p style="color: #6b7280; margin-bottom: 24px; line-height: 1.6;">${message || 'An unexpected error occurred. Please refresh the page or try again later.'}</p>
+        <button onclick="location.reload()" style="
+          background: #047857;
+          color: white;
+          border: none;
+          padding: 12px 24px;
+          border-radius: 8px;
+          font-size: 16px;
+          cursor: pointer;
+          transition: background 0.2s;
+        ">Refresh Page</button>
+      </div>
+    `;
+
+    document.body.appendChild(errorUI);
+  };
+
+  // Global error handler
+  window.addEventListener('error', (event) => {
+    if (typeof DEV_MODE !== 'undefined' && DEV_MODE) {
+      console.error('Global error:', event.error);
+    }
+    showErrorUI('The app encountered an error. We\'re working to fix it!');
+  });
+
+  // Unhandled promise rejection handler
+  window.addEventListener('unhandledrejection', (event) => {
+    if (typeof DEV_MODE !== 'undefined' && DEV_MODE) {
+      console.error('Unhandled promise rejection:', event.reason);
+    }
+    showErrorUI('A network error occurred. Please check your connection and try again.');
+  });
+
+  // Safe console logging wrapper
+  const log = {
+    error: (...args) => { if (typeof DEV_MODE !== 'undefined' && DEV_MODE) console.error(...args); },
+    warn: (...args) => { if (typeof DEV_MODE !== 'undefined' && DEV_MODE) console.warn(...args); },
+    info: (...args) => { if (typeof DEV_MODE !== 'undefined' && DEV_MODE) console.info(...args); },
+    debug: (...args) => { if (typeof DEV_MODE !== 'undefined' && DEV_MODE) console.debug(...args); },
+    log: (...args) => { if (typeof DEV_MODE !== 'undefined' && DEV_MODE) console.log(...args); }
+  };
+
+  /* ---------------- NETWORK STATUS MONITORING ---------------- */
+  const showOfflineBanner = () => {
+    let banner = document.getElementById('bp-offline-banner');
+    if (!banner) {
+      banner = document.createElement('div');
+      banner.id = 'bp-offline-banner';
+      banner.className = 'bp-offline-banner';
+      banner.innerHTML = `
+        <div class="bp-offline-banner-content">
+          <span class="bp-offline-banner-icon">📡</span>
+          <span>You're offline. Some features may be limited.</span>
+        </div>
+        <button onclick="location.reload()">Retry</button>
+      `;
+      document.body.appendChild(banner);
+    }
+    banner.classList.add('is-visible');
+  };
+
+  const hideOfflineBanner = () => {
+    const banner = document.getElementById('bp-offline-banner');
+    if (banner) banner.classList.remove('is-visible');
+  };
+
+  const showNetworkError = (message) => {
+    let toast = document.getElementById('bp-network-error-toast');
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.id = 'bp-network-error-toast';
+      toast.className = 'bp-network-error-toast';
+      toast.innerHTML = `
+        <span>⚠️ ${message || 'Network error occurred'}</span>
+        <button onclick="this.parentElement.remove()">Dismiss</button>
+      `;
+      document.body.appendChild(toast);
+    } else {
+      toast.querySelector('span').textContent = `⚠️ ${message || 'Network error occurred'}`;
+    }
+    toast.classList.add('is-visible');
+    setTimeout(() => toast.classList.remove('is-visible'), 5000);
+  };
+
+  // Monitor network status
+  if (typeof window !== 'undefined') {
+    window.addEventListener('online', () => {
+      hideOfflineBanner();
+      log.info('Network connection restored');
+    });
+
+    window.addEventListener('offline', () => {
+      showOfflineBanner();
+      log.warn('Network connection lost');
+    });
+
+    // Initial check
+    if (!navigator.onLine) {
+      showOfflineBanner();
+    }
+  }
+
   const ICONS = {
     landmark: '<path d="M4 10h16M5 10v8M9.5 10v8M14.5 10v8M19 10v8M3 21h18M12 3l8 5H4z"/>',
     mountain: '<path d="M3 19.5h18L14 6.5l-3.4 6-2-3z"/>',
@@ -28,12 +155,80 @@ const BanglaPath = (() => {
   const tagIcon = (name) => `<svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[name] || ICONS.landmark}</svg>`;
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
+  /* ---------------- XSS PROTECTION ---------------- */
+  const sanitizeHTML = (html) => {
+    if (typeof DOMPurify !== 'undefined' && DOMPurify.sanitize) {
+      return DOMPurify.sanitize(html, {
+        ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'a', 'p', 'br', 'ul', 'ol', 'li', 'span'],
+        ALLOWED_ATTR: ['href', 'target', 'rel'],
+        ALLOW_DATA_ATTR: false
+      });
+    }
+
+    // Fallback: basic sanitization
+    return html
+      .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+      .replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, '')
+      .replace(/<object\b[^<]*(?:(?!<\/object>)<[^<]*)*<\/object>/gi, '')
+      .replace(/<embed\b[^>]*>/gi, '')
+      .replace(/javascript:/gi, '')
+      .replace(/on\w+\s*=/gi, '');
+  };
+
+  const safeMarkdown = (text) => {
+    // Basic markdown to HTML conversion with sanitization
+    let html = text
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.*?)\*/g, '<em>$1</em>')
+      .replace(/`(.*?)`/g, '<code>$1</code>')
+      .replace(/\n/g, '<br>');
+
+    return sanitizeHTML(html);
+  };
+
   let catalog = { places: [], pins: [], recommended: [], openingSuggestions: [], categories: [] };
   let byId = new Map();
   let history = [];
   let lastView = 'home';
   let busy = false;
   let started = false;
+
+  /* ---------------- RATE LIMITING ---------------- */
+  let lastRequestTime = 0;
+  const MIN_REQUEST_INTERVAL = 1000; // 1 second between requests
+  const requestQueue = [];
+
+  const checkRateLimit = () => {
+    const now = Date.now();
+    if (now - lastRequestTime < MIN_REQUEST_INTERVAL) {
+      const waitTime = MIN_REQUEST_INTERVAL - (now - lastRequestTime);
+      return { allowed: false, waitTime };
+    }
+    return { allowed: true, waitTime: 0 };
+  };
+
+  const updateLastRequest = () => {
+    lastRequestTime = Date.now();
+  };
+
+  /* ---------------- USER PROFILE ---------------- */
+  const getUserProfile = () => {
+    try {
+      return JSON.parse(localStorage.getItem('banglapath_user_profile') || '{}');
+    } catch {
+      return {};
+    }
+  };
+
+  const updateUserName = () => {
+    const profile = getUserProfile();
+    const nameElements = document.querySelectorAll('#disc-name, .user-name');
+    const displayName = profile.name || profile.email?.split('@')[0] || 'Traveler';
+
+    nameElements.forEach(el => {
+      if (el) el.textContent = displayName;
+    });
+  };
 
   /* ---------------- persona ---------------- */
 
@@ -272,12 +467,16 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
   function addMessage(role, text) {
     const row = document.createElement('div');
     row.className = `msg from-${role}`;
+
+    // Sanitize bot responses for XSS protection
+    const safeText = role === 'bot' ? safeMarkdown(text) : paragraphs(esc(text));
+
     row.innerHTML =
       role === 'user'
         ? `<span class="msg-avatar user"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.4"/><path d="M5 20c.7-3.6 3.5-5.4 7-5.4s6.3 1.8 7 5.4"/></svg></span>
-           <div class="bubble">${paragraphs(text)}</div>`
+           <div class="bubble">${safeText}</div>`
         : `<span class="msg-avatar"><img src="images/bot-avatar.png" alt="" /></span>
-           <div class="bubble">${paragraphs(text)}</div>`;
+           <div class="bubble">${safeText}</div>`;
     log().appendChild(row);
     scrollChat();
     return row;
@@ -373,12 +572,13 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
     } catch (err) {
       clearTimeout(busyTimer);
       typing.remove();
+      log.error('[BanglaPath]', err);
       const row = addMessage(
         'bot',
         `Ish, my line dropped for a second (；一_一)\n\n${err.message}\n\nTry me again in a moment?`
       );
       row.classList.add('is-error');
-      console.error('[BanglaPath]', err);
+      log.error('[BanglaPath]', err);
     } finally {
       clearTimeout(busyTimer);
       setBusy(false);
@@ -3761,6 +3961,48 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
     srcText: 'How much is its price?',
     tgtText: 'এটির দাম কত?',
     pronText: 'Etir daam koto?',
+    recent: [],
+    debounceTimer: null
+  };
+
+  // Load translator state from localStorage
+  const loadTranslatorState = () => {
+    try {
+      const saved = localStorage.getItem('banglapath_translator_state');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        transState = { ...transState, ...parsed };
+        // Reset runtime-only properties
+        transState.debounceTimer = null;
+      }
+    } catch (e) {
+      log.error('Failed to load translator state:', e);
+    }
+  };
+
+  // Save translator state to localStorage
+  const saveTranslatorState = () => {
+    try {
+      const toSave = {
+        srcLang: transState.srcLang,
+        tgtLang: transState.tgtLang,
+        srcText: transState.srcText,
+        tgtText: transState.tgtText,
+        pronText: transState.pronText,
+        recent: transState.recent
+      };
+      localStorage.setItem('banglapath_translator_state', JSON.stringify(toSave));
+    } catch (e) {
+      log.error('Failed to save translator state:', e);
+    }
+  };
+
+  // Auto-save translator state on changes
+  const originalRenderTranslator = renderTranslator;
+  renderTranslator = function() {
+    originalRenderTranslator.apply(this, arguments);
+    saveTranslatorState();
+  };
     isListening: false,
     isLoading: false,
     debounceTimer: null,
@@ -4451,7 +4693,7 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
         utterance.volume = 1;
         window.speechSynthesis.speak(utterance);
       } catch(e) {
-        console.log('[Auto-speak skipped]', e);
+        log.log('[Auto-speak skipped]', e);
       }
     }
   }
@@ -4548,7 +4790,7 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
       }
     } catch (e) {
       if (e.name === 'AbortError') return;
-      console.warn('[Translator] Server API request failed, trying client fallback', e);
+      log.warn('[Translator] Server API request failed, trying client fallback', e);
     }
 
     // 5. Client fallback via askGemini
@@ -4565,7 +4807,7 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
         return;
       }
     } catch (e) {
-      console.warn('[Translator] Fallback failed', e);
+      log.warn('[Translator] Fallback failed', e);
     }
 
     // Final fallback
@@ -7229,9 +7471,75 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
     $('#chat-form').addEventListener('submit', (e) => {
       e.preventDefault();
       const input = $('#chat-text');
-      const text = input.value;
+      const text = input.value.trim();
+
+      // Input validation
+      if (!text) {
+        showNetworkError('Please enter a message');
+        return;
+      }
+
+      if (text.length > 4000) {
+        showNetworkError('Message too long. Please keep it under 4000 characters.');
+        return;
+      }
+
       input.value = '';
       send(text);
+    });
+
+    // Add input validation feedback
+    const chatInput = $('#chat-text');
+    const sendBtn = $('#chat-form .send');
+
+    if (chatInput && sendBtn) {
+      const updateSendButton = () => {
+        const text = chatInput.value.trim();
+        sendBtn.disabled = !text || text.length > 4000;
+      };
+
+      chatInput.addEventListener('input', updateSendButton);
+      chatInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          if (!sendBtn.disabled) {
+            sendBtn.click();
+          }
+        }
+      });
+
+      // Initial state
+      updateSendButton();
+    }
+
+    /* ---------------- KEYBOARD SHORTCUTS ---------------- */
+    document.addEventListener('keydown', (e) => {
+      // Escape to close modals/chat
+      if (e.key === 'Escape') {
+        const chatPanel = document.querySelector('.chat');
+        if (chatPanel && !chatPanel.classList.contains('is-hidden')) {
+          closeChat();
+        }
+      }
+
+      // Ctrl/Cmd + K to focus chat input
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        const chatInput = document.getElementById('chat-text');
+        if (chatInput) chatInput.focus();
+      }
+    });
+
+    /* ---------------- HAPTIC FEEDBACK ---------------- */
+    const triggerHaptic = (pattern = [10]) => {
+      if (typeof navigator !== 'undefined' && navigator.vibrate) {
+        navigator.vibrate(pattern);
+      }
+    };
+
+    // Add haptic feedback to critical buttons
+    document.querySelectorAll('.send, .place-card, .rail-item').forEach(el => {
+      el.addEventListener('click', () => triggerHaptic([10]));
     });
 
     $('#chat-reset').addEventListener('click', resetChat);
@@ -7606,7 +7914,7 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
   }
 
   const ready = load().catch((err) => {
-    console.error('[BanglaPath] could not load places.json', err);
+    log.error('[BanglaPath] could not load places.json', err);
   });
 
   /** Called by the intro sequence once the foliage covers the screen. */
@@ -7852,7 +8160,7 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
         if (typing) typing.remove();
         const errRow = mhAddMessage('bot', `Ish, my line dropped (；一_一)\n\n${err.message}\n\nTry again in a moment?`);
         if (errRow) errRow.classList.add('is-error');
-        console.error('[BanglaPath Mobile]', err);
+        log.error('[BanglaPath Mobile]', err);
       } finally {
         busy = false;
         const sendBtn = document.querySelector('.mh-send-btn');

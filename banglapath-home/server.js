@@ -85,7 +85,7 @@ try {
   const pData = JSON.parse(fs.readFileSync(path.join(ROOT, 'places.json'), 'utf8'));
   placesCatalog = Array.isArray(pData.places) ? pData.places : [];
 } catch (err) {
-  console.warn('Could not preload places.json:', err.message);
+  if (process.env.NODE_ENV !== 'production') console.warn('Could not preload places.json:', err.message);
 }
 
 function readReply(raw) {
@@ -290,7 +290,7 @@ KNOWLEDGE SCOPE:
       } catch {
         /* keep the raw snippet */
       }
-      console.error(`[chat] ${model} ${upstream.status}: ${message.split('\n')[0]}`);
+      if (process.env.NODE_ENV !== 'production') console.error(`[chat] ${model} ${upstream.status}: ${message.split('\n')[0]}`);
       last =
         upstream.status === 429
           ? 'The Gemini key has run out of free quota for now — try again in a minute.'
@@ -307,7 +307,7 @@ KNOWLEDGE SCOPE:
       continue;
     }
     if (!out.reply) {
-      console.error(`[chat] ${model} empty candidate (finishReason ${out.finish})`);
+      if (process.env.NODE_ENV !== 'production') console.error(`[chat] ${model} empty candidate (finishReason ${out.finish})`);
       last = 'Gemini sent an empty reply.';
       continue;
     }
@@ -615,7 +615,7 @@ http
   })
   .listen(PORT, '0.0.0.0', () => {
     console.log(`BanglaPath on http://0.0.0.0:${PORT}`);
-    if (!process.env.GEMINI_API_KEY) console.warn('GEMINI_API_KEY is not set — the chat will return 503.');
+    if (!process.env.GEMINI_API_KEY && process.env.NODE_ENV !== 'production') console.warn('GEMINI_API_KEY is not set — the chat will return 503.');
   });
 
 

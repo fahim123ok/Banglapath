@@ -10,6 +10,248 @@
   }
 }
 
+/* ============================================================
+   SKELETON LOADING STATES
+   ============================================================ */
+.skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s ease-in-out infinite;
+  border-radius: 4px;
+}
+
+@keyframes skeleton-loading {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.skeleton-card {
+  width: clamp(210px, 18.5vw, 260px);
+  aspect-ratio: 1 / 1.34;
+  min-height: 270px;
+  border-radius: 20px;
+  background: #f5f5f5;
+}
+
+.skeleton-text {
+  height: 16px;
+  margin-bottom: 8px;
+  border-radius: 4px;
+}
+
+.skeleton-text.short { width: 60%; }
+.skeleton-text.medium { width: 80%; }
+.skeleton-text.long { width: 100%; }
+
+.skeleton-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+}
+
+.skeleton-button {
+  height: 44px;
+  width: 120px;
+  border-radius: 8px;
+}
+
+/* Loading overlay for images */
+.img-loading {
+  position: relative;
+  background: #f5f5f5;
+  min-height: 200px;
+}
+
+.img-loading::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s ease-in-out infinite;
+}
+
+/* ============================================================
+   OFFLINE BANNER & NETWORK ERROR UI
+   ============================================================ */
+.bp-offline-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: var(--z-notification);
+  background: #f59e0b;
+  color: #1f2937;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-100%);
+  transition: transform 0.3s ease;
+}
+
+.bp-offline-banner.is-visible {
+  transform: translateY(0);
+}
+
+.bp-offline-banner-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.bp-offline-banner-icon {
+  font-size: 18px;
+}
+
+.bp-offline-banner button {
+  background: #1f2937;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.bp-offline-banner button:hover {
+  background: #374151;
+}
+
+.bp-network-error-toast {
+  position: fixed;
+  bottom: 100px;
+  left: 50%;
+  transform: translateX(-50%) translateY(100px);
+  background: #ef4444;
+  color: white;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  z-index: var(--z-toast);
+  transition: transform 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bp-network-error-toast.is-visible {
+  transform: translateX(-50%) translateY(0);
+}
+
+.bp-network-error-toast button {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: none;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  margin-left: 8px;
+}
+
+/* ============================================================
+   TOUCH FEEDBACK & HAPTIC VIBRATION
+   ============================================================ */
+:root {
+  --safe-area-inset-top: env(safe-area-inset-top, 0px);
+  --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-area-inset-left: env(safe-area-inset-left, 0px);
+  --safe-area-inset-right: env(safe-area-inset-right, 0px);
+}
+
+/* Touch feedback delay */
+.app button,
+.app a,
+.place-card,
+.rail-item {
+  position: relative;
+  transition: transform 0.1s ease, background-color 0.1s ease;
+}
+
+.app button:active,
+.app a:active,
+.place-card:active,
+.rail-item:active {
+  transform: scale(0.97);
+  transition-delay: 50ms;
+}
+
+/* Safe area insets for all pages */
+.app,
+.content,
+.chat-body,
+.reco-rail,
+.disc-cards-grid {
+  padding-top: var(--safe-area-inset-top);
+  padding-bottom: var(--safe-area-inset-bottom);
+  padding-left: var(--safe-area-inset-left);
+  padding-right: var(--safe-area-inset-right);
+}
+
+/* Bottom nav overlap fix */
+.content {
+  padding-bottom: calc(90px + var(--safe-area-inset-bottom));
+}
+
+.chat-body {
+  padding-bottom: calc(100px + var(--safe-area-inset-bottom));
+}
+
+/* Scroll momentum optimization */
+.reco-rail,
+.disc-cards-grid,
+.chat-body,
+.content {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+/* Pull-to-refresh visual feedback */
+.content {
+  overscroll-behavior-y: contain;
+}
+
+/* Voice input pulsing animation */
+.chat-input button.is-recording {
+  position: relative;
+  animation: pulse-recording 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-recording {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+  }
+  50% {
+    box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
+  }
+}
+
+.chat-input button.is-recording::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 8px;
+  height: 8px;
+  background: #ef4444;
+  border-radius: 50%;
+  animation: pulse-dot 1s ease-in-out infinite;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  50% { opacity: 0.5; transform: translate(-50%, -50%) scale(1.2); }
+}
+
 :root {
   --z-base: 1;
   --z-dropdown: 1000;

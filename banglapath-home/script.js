@@ -156,7 +156,7 @@ window.addEventListener('bp-launch', function() {
     try { 
       buildSweep();
     } catch(e) {
-      console.error('buildSweep error:', e);
+      if (typeof DEV_MODE !== 'undefined' && DEV_MODE) console.error('buildSweep error:', e);
     }
   }
   setTimeout(function() {
@@ -582,6 +582,21 @@ function launch(fast = false) {
 bindTapOrClick(cta, () => launch(false));
 bindTapOrClick(document.getElementById('btn-skip-intro'), () => launch(true));
 bindTapOrClick(document.getElementById('btn-quick-skip'), () => launch(true));
+
+/* ============================================================
+   SERVICE WORKER REGISTRATION FOR PWA OFFLINE SUPPORT
+   ============================================================ */
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then((registration) => {
+        if (typeof DEV_MODE !== 'undefined' && DEV_MODE) console.log('[SW] Service Worker registered:', registration.scope);
+      })
+      .catch((error) => {
+        if (typeof DEV_MODE !== 'undefined' && DEV_MODE) console.log('[SW] Service Worker registration failed:', error);
+      });
+  });
+}
 
 // Universal fallback delegation for touchscreens and mobile viewports
 ['click', 'touchend'].forEach((evtType) => {
