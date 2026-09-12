@@ -17,9 +17,9 @@ const PORT = Number(process.env.PORT) || 3000;
  * The rest are tried in order when one is rate-limited. */
 const MODELS = [
   ...(process.env.GEMINI_MODEL ? [process.env.GEMINI_MODEL] : []),
-  'gemini-2.5-flash',
-  'gemini-2.5-flash-lite',
-  'gemini-2.0-flash',
+  'gemini-3.6-flash',
+  'gemini-flash-latest',
+  'gemini-3.8-flash',
 ].filter((m, i, all) => all.indexOf(m) === i);
 
 // Thinking is configured differently across generations, and both families
@@ -618,6 +618,7 @@ http
     console.log(`BanglaPath on http://0.0.0.0:${PORT}`);
     if (!process.env.GEMINI_API_KEY) console.warn('GEMINI_API_KEY is not set — the chat will return 503.');
   });
+
 
 
 
