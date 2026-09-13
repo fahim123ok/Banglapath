@@ -258,6 +258,155 @@ const BanglaPath = (() => {
     });
   };
 
+  /* ---------------- LOCATION PERMISSION ---------------- */
+  const requestLocationPermission = async () => {
+    if (!navigator.geolocation) {
+      showToast('Location not supported on this device');
+      return null;
+    }
+
+    try {
+      const position = await new Promise((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 300000 // 5 minutes cache
+        });
+      });
+
+      return {
+        lat: position.coords.latitude,
+        lon: position.coords.longitude
+      };
+    } catch (error) {
+      log.error('Location permission denied:', error);
+      showToast('Location access denied. Some features may be limited.');
+      return null;
+    }
+  };
+
+  const showNearbyPlaces = async () => {
+    const location = await requestLocationPermission();
+    if (!location) return;
+
+    // Find places within 50km
+    const nearby = catalog.places.filter(place => {
+      if (!place.lat || !place.lon) return false;
+      const distance = calculateDistance(location.lat, location.lon, place.lat, place.lon);
+      return distance <= 50; // 50km radius
+    }).slice(0, 5); // Show top 5 nearby
+
+    if (nearby.length > 0) {
+      showToast(`Found ${nearby.length} places near you!`);
+      // Could show a modal or highlight these places
+    } else {
+      showToast('No curated places found within 50km');
+    }
+  };
+
+  function calculateDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371; // Earth's radius in km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+  }
+
+  /* ---------------- SEARCH AUTOCOMPLETE ---------------- */
+  const getPopularPlaces = () => {
+    return catalog.places.slice(0, 10); // Top 10 popular places
+  };
+
+  const setupSearchAutocomplete = () => {
+    const searchInput = $('#disc-input');
+    const searchResults = $('#disc-results');
+
+    if (!searchInput || !searchResults) return;
+
+    searchInput.addEventListener('input', (e) => {
+      const query = e.target.value.trim().toLowerCase();
+
+      if (query.length < 2) {
+        searchResults.hidden = true;
+        return;
+      }
+
+      const matches = catalog.places.filter(place => {
+        return place.name.toLowerCase().includes(query) ||
+               place.district.toLowerCase().includes(query) ||
+               place.tag.toLowerCase().includes(query);
+      }).slice(0, 8); // Show top 8 matches
+
+      if (matches.length > 0) {
+        searchResults.innerHTML = matches.map(place => `
+          <li class="search-result-item" data-id="${place.id}" tabindex="0">
+            <div class="search-result-content">
+              <img src="${place.image}" alt="${esc(place.name)}" class="search-result-thumb" />
+              <div class="search-result-info">
+                <strong>${esc(place.name)}</strong>
+                <span class="search-result-meta">${esc(place.district)} • ${esc(place.tag)}</span>
+              </div>
+            </div>
+          </li>
+        `).join('');
+        searchResults.hidden = false;
+      } else {
+        searchResults.innerHTML = `
+          <li class="search-result-item no-results">
+            <span>No matches found. Try "Cox's Bazar", "Sundarbans", or "Sylhet"</span>
+          </li>
+        `;
+        searchResults.hidden = false;
+      }
+    });
+
+    // Handle result selection
+    searchResults.addEventListener('click', (e) => {
+      const resultItem = e.target.closest('.search-result-item');
+      if (resultItem && resultItem.dataset.id) {
+        searchInput.value = byId.get(resultItem.dataset.id)?.name || '';
+        searchResults.hidden = true;
+        openPlace(resultItem.dataset.id);
+      }
+    });
+
+    // Hide results on outside click
+    document.addEventListener('click', (e) => {
+      if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
+        searchResults.hidden = true;
+      }
+    });
+
+    // Keyboard navigation
+    searchInput.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        const items = searchResults.querySelectorAll('.search-result-item');
+        const currentIndex = Array.from(items).findIndex(item => item === document.activeElement);
+
+        if (e.key === 'ArrowDown') {
+          const nextIndex = currentIndex < items.length - 1 ? currentIndex + 1 : 0;
+          items[nextIndex]?.focus();
+        } else {
+          const prevIndex = currentIndex > 0 ? currentIndex - 1 : items.length - 1;
+          items[prevIndex]?.focus();
+        }
+      }
+
+      if (e.key === 'Enter' && document.activeElement.classList.contains('search-result-item')) {
+        e.preventDefault();
+        document.activeElement.click();
+      }
+
+      if (e.key === 'Escape') {
+        searchResults.hidden = true;
+      }
+    });
+  };
+
   /* ---------------- BACK BUTTON HANDLING ---------------- */
   window.addEventListener('popstate', (event) => {
     if (event.state && event.state.view) {
@@ -826,7 +975,7 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
     const isSaved = isPlaceSaved(p.id);
     return `
       <button class="place-card" type="button" data-id="${p.id}" aria-label="${esc(p.name)}, ${esc(p.district)}">
-        <img src="${p.image}" alt="${esc(p.name)}" loading="lazy" />
+        <img src="${p.image}" alt="${esc(p.name)}" loading="lazy" srcset="${p.image} 1x, ${p.image.replace('.jpg', '@2x.jpg')} 2x" sizes="(max-width: 600px) 100vw, (max-width: 1200px) 50vw, 33vw" />
         <div class="card-gradient-top"></div>
         <div class="card-gradient-bottom"></div>
         <div class="card-top-row">
@@ -5550,37 +5699,50 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
             </div>
 
             <div class="saved-carousel-wrapper">
-              <div class="saved-places-track" id="saved-places-track">
-                ${places
-                  .map(
-                    (p) => `
-                  <div class="saved-place-card" data-explore="${p.id}">
-                    <div class="saved-place-img-wrap">
-                      <img src="${esc(p.image)}" alt="${esc(p.name)}" />
-                      <div class="saved-place-gradient"></div>
-                      <span class="saved-rating-badge">
-                        <svg viewBox="0 0 24 24"><path d="m12 2.5 2.8 6 6.6.9-4.8 4.6 1.2 6.5-5.8-3.1-5.8 3.1 1.2-6.5L2.6 9.4l6.6-.9z" fill="currentColor"/></svg>
-                        <span>${p.rating || '4.8'}</span>
-                      </span>
-                      <button type="button" class="saved-heart-btn" data-toggle-heart="${p.id}" title="Remove from saved">
-                        <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
-                      </button>
-                    </div>
-                    <div class="saved-place-details">
-                      <h3 class="saved-place-name">${esc(p.name)}</h3>
-                      <p class="saved-place-desc">${esc(p.blurb || 'Iconic landmark destination in Bangladesh.')}</p>
-                      <div class="saved-place-loc">
-                        <svg viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7zm0 9.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5z" fill="currentColor"/></svg>
-                        <span>${esc(p.district || 'Bangladesh')}</span>
-                      </div>
-                    </div>
-                  </div>`
-                  )
-                  .join('')}
-              </div>
-              <button type="button" class="saved-carousel-arrow next" id="saved-places-next-btn" aria-label="Next places">
-                <svg viewBox="0 0 24 24"><path d="m9 18 6-6-6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              </button>
+              ${places.length === 0 ? `
+                <div class="saved-empty-state">
+                  <div class="empty-illustration">
+                    <svg style="width: 80px; height: 80px; stroke: #cbd5e1; fill: none; stroke-width: 1.5; margin: 0 auto 20px; display: block;" viewBox="0 0 24 24">
+                      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                    </svg>
+                    <p style="margin: 0 0 8px; font-size: 16px; font-weight: 600; color: #1f2937;">No saved places yet</p>
+                    <p style="margin: 0 0 20px; font-size: 14px; color: #6b7280;">Start exploring and save your favorite destinations!</p>
+                    <button type="button" class="btn-primary" onclick="setView('explore')">Explore Places</button>
+                  </div>
+                </div>
+              ` : `
+                <div class="saved-places-track" id="saved-places-track">
+                  ${places
+                    .map(
+                      (p) => `
+                      <div class="saved-place-card" data-explore="${p.id}">
+                        <div class="saved-place-img-wrap">
+                          <img src="${esc(p.image)}" alt="${esc(p.name)}" />
+                          <div class="saved-place-gradient"></div>
+                          <span class="saved-rating-badge">
+                            <svg viewBox="0 0 24 24"><path d="m12 2.5 2.8 6 6.6.9-4.8 4.6 1.2 6.5-5.8-3.1-5.8 3.1 1.2-6.5L2.6 9.4l6.6-.9z" fill="currentColor"/></svg>
+                            <span>${p.rating || '4.8'}</span>
+                          </span>
+                          <button type="button" class="saved-heart-btn" data-toggle-heart="${p.id}" title="Remove from saved">
+                            <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                          </button>
+                        </div>
+                        <div class="saved-place-details">
+                          <h3 class="saved-place-name">${esc(p.name)}</h3>
+                          <p class="saved-place-desc">${esc(p.blurb || 'Iconic landmark destination in Bangladesh.')}</p>
+                          <div class="saved-place-loc">
+                            <svg viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7zm0 9.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5z" fill="currentColor"/></svg>
+                            <span>${esc(p.district || 'Bangladesh')}</span>
+                          </div>
+                        </div>
+                      </div>`
+                      )
+                      .join('')}
+                </div>
+                <button type="button" class="saved-carousel-arrow next" id="saved-places-next-btn" aria-label="Next places">
+                  <svg viewBox="0 0 24 24"><path d="m9 18 6-6-6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+              `}
             </div>
           </div>
 
@@ -7679,6 +7841,17 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
         triggerHaptic([10]);
       }
     });
+
+    // Location permission button
+    const locationBtn = $('#btn-location');
+    if (locationBtn) {
+      locationBtn.addEventListener('click', () => {
+        showNearbyPlaces();
+      });
+    }
+
+    // Setup search autocomplete
+    setupSearchAutocomplete();
 
     $('#chat-reset').addEventListener('click', resetChat);
 
