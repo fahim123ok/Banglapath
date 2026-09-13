@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: banglapath
+    runtime: node
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: node banglapath-home/server.js
+    healthCheckPath: /
+    envVars:
+      - key: GEMINI_API_KEY
+        sync: false
