@@ -546,7 +546,10 @@ function launch(fast = false) {
       window.BanglaPath.enterHome();
     } else {
       const appEl = document.getElementById('app');
-      if (appEl) appEl.hidden = false;
+      if (appEl) {
+        appEl.hidden = false;
+        setTimeout(() => appEl.classList.add('is-open'), 50);
+      }
     }
     return;
   }
@@ -571,7 +574,11 @@ function launch(fast = false) {
       window.BanglaPath.enterHome();
     } else {
       const appEl = document.getElementById('app');
-      if (appEl) appEl.hidden = false;
+      if (appEl) {
+        appEl.hidden = false;
+        // Add is-open class to trigger opacity transition
+        setTimeout(() => appEl.classList.add('is-open'), 50);
+      }
     }
     window.removeEventListener('wheel', blockScroll);
     window.removeEventListener('touchmove', blockScroll);

@@ -8228,6 +8228,16 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
     log.error('[BanglaPath] could not load places.json', err);
   });
 
+  // Load translator state on startup
+  try {
+    loadTranslatorState();
+  } catch (e) {
+    log.error('Failed to load translator state:', e);
+  }
+
+  // Load translator state on startup
+  loadTranslatorState();
+
   /** Called by the intro sequence once the foliage covers the screen. */
   async function enterHome() {
     if (started) return;
@@ -8235,6 +8245,8 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
     await ready;
     const app = document.getElementById('app');
     app.hidden = false;
+    // Add is-open class to trigger opacity transition
+    setTimeout(() => app.classList.add('is-open'), 50);
     renderPins();
     renderRail();
     renderCats();
