@@ -4282,11 +4282,6 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
     originalRenderTranslator.apply(this, arguments);
     saveTranslatorState();
   };
-    isListening: false,
-    isLoading: false,
-    debounceTimer: null,
-    recent: loadRecentTranslations(),
-  };
 
   const clientTransCache = new Map();
   let activeTransAbort = null;
