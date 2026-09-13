@@ -174,6 +174,11 @@ const BanglaPath = (() => {
         const response = await fetch(url, options);
         if (response.ok) return response;
 
+        // The server already converted quota/service failures into a useful
+        // JSON message. Return them immediately instead of retrying the same
+        // exhausted service three times.
+        if (response.status === 429 || response.status === 503) return response;
+
         // If response is not ok, save error and retry
         lastError = new Error(`HTTP ${response.status}: ${response.statusText}`);
         if (response.status >= 400 && response.status < 500) {
@@ -213,29 +218,90 @@ const BanglaPath = (() => {
   };
 
   /* ---------------- LOCATION PERMISSION ---------------- */
+  let currentUserLocation = null;
+  let locationRequest = null;
+
+  const updateLocationLabel = (label) => {
+    const locationLabel = $('#location-label');
+    if (locationLabel) locationLabel.textContent = label;
+  };
+
+  const resolveLocationLabel = async (location) => {
+    try {
+      const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${location.lat}&lon=${location.lon}&zoom=12&addressdetails=1`);
+      if (!response.ok) throw new Error('Reverse geocoding failed');
+      const data = await response.json();
+      const address = data.address || {};
+      return address.city || address.town || address.suburb || address.county || 'Current location';
+    } catch {
+      return 'Current location';
+    }
+  };
+
   const requestLocationPermission = async () => {
+    if (currentUserLocation) return currentUserLocation;
+    if (locationRequest) return locationRequest;
     if (!navigator.geolocation) {
       showToast('Location not supported on this device');
       return null;
     }
 
-    try {
-      const position = await new Promise((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(resolve, reject, {
-          enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 300000 // 5 minutes cache
+    locationRequest = (async () => {
+      try {
+        const position = await new Promise((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(resolve, reject, {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 300000 // 5 minutes cache
+          });
         });
-      });
 
-      return {
-        lat: position.coords.latitude,
-        lon: position.coords.longitude
-      };
-    } catch (error) {
-      log.error('Location permission denied:', error);
-      showToast('Location access denied. Some features may be limited.');
-      return null;
+        currentUserLocation = {
+          lat: position.coords.latitude,
+          lon: position.coords.longitude
+        };
+        updateLocationLabel('Locating...');
+        resolveLocationLabel(currentUserLocation).then(updateLocationLabel);
+        return currentUserLocation;
+      } catch (error) {
+        log.error('Location permission denied:', error);
+        updateLocationLabel('Location off');
+        showToast('Location access denied. Distance will use place information instead.');
+        return null;
+      } finally {
+        locationRequest = null;
+      }
+    })();
+    return locationRequest;
+  };
+
+  const distanceLabelForPlace = (place) => {
+    if (!currentUserLocation || !place || typeof place.lat !== 'number' || typeof place.lon !== 'number') {
+      return place?.distance || place?.distanceFrom || 'Location unavailable';
+    }
+    const km = calculateDistance(currentUserLocation.lat, currentUserLocation.lon, place.lat, place.lon);
+    return `${km < 10 ? km.toFixed(1) : Math.round(km)} km from you`;
+  };
+
+  const updatePdpDistance = (place) => {
+    const distanceEl = document.querySelector('.pdp-distance-value');
+    if (distanceEl) distanceEl.textContent = distanceLabelForPlace(place);
+  };
+
+  const openPlaceDirections = async (place) => {
+    const mapTab = window.open('about:blank', '_blank', 'noopener,noreferrer');
+    const location = await requestLocationPermission();
+    if (!location) {
+      mapTab?.close();
+      return;
+    }
+    const origin = `${location.lat},${location.lon}`;
+    const destination = `${place.lat},${place.lon}`;
+    const url = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}&travelmode=driving&dir_action=navigate&basemap=satellite`;
+    if (mapTab) {
+      mapTab.location.href = url;
+    } else {
+      window.open(url, '_blank', 'noopener,noreferrer');
     }
   };
 
@@ -451,6 +517,7 @@ LIVE INFORMATION & WEB RESEARCH — CRITICAL
 * Never rely on memory for a time-sensitive fact when current information can be searched.
 * Always consider the publication/update date of information. Prefer the newest reliable source.
 * If reliable current information cannot be found, clearly say that you cannot verify it. NEVER invent, assume, or confidently repeat an old fact.
+* Do not include URLs, markdown links, a "Sources" heading, or a "Clickable Sources" section inside your reply. The app automatically adds verified clickable source links below your answer.
 * For visa, immigration, permits, safety, and legal requirements: distinguish clearly between confirmed official requirements and traveller reports. When possible, tell the traveller where the current official information comes from.
 * If sources conflict, do not silently choose one. Explain the conflict briefly and favor the most recent authoritative source.
 * Do not promise that a rule, price, route, opening time, permit, or safety condition is current unless it has been verified.
@@ -520,7 +587,13 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
       data = { reply: salvage(text), places: [] };
     }
     const ids = Array.isArray(data.places) ? data.places.filter((id) => byId.has(id)) : [];
-    return { reply: String(data.reply || '').trim(), places: [...new Set(ids)].slice(0, 2) };
+    const sources = (raw?.groundingMetadata?.groundingChunks || [])
+      .map((chunk) => chunk.web)
+      .filter((web) => web && /^https?:\/\//i.test(web.uri || ''))
+      .map((web) => ({ title: String(web.title || web.uri), uri: web.uri }))
+      .filter((source, index, all) => all.findIndex((item) => item.uri === source.uri) === index)
+      .slice(0, 5);
+    return { reply: String(data.reply || '').trim(), places: [...new Set(ids)].slice(0, 2), sources };
   }
 
   async function askGemini(turns) {
@@ -538,7 +611,7 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
         if (data.error) throw new Error(data.error);
         const reply = String(data.reply || '').trim();
         if (!reply) throw new Error('The guide sent an empty reply.');
-        return { reply, places: (data.places || []).filter((id) => byId.has(id)).slice(0, 2) };
+        return { reply, places: (data.places || []).filter((id) => byId.has(id)).slice(0, 2), sources: data.sources || [] };
       }
       if (res.status !== 404) {
         // The proxy explains itself (quota, upstream timeout) — say that, not a status code.
@@ -635,12 +708,12 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
     return result.join('');
   }
 
-  function addMessage(role, text) {
+  function addMessage(role, text, sources = []) {
     const row = document.createElement('div');
     row.className = `msg from-${role}`;
 
     // Sanitize bot responses for XSS protection
-    const safeText = role === 'bot' ? safeMarkdown(text) : paragraphs(esc(text));
+    const safeText = role === 'bot' ? safeMarkdown(text) : paragraphs(text);
 
     row.innerHTML =
       role === 'user'
@@ -648,6 +721,19 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
            <div class="bubble">${safeText}</div>`
         : `<span class="msg-avatar"><img src="images/bot-avatar.png" alt="" /></span>
            <div class="bubble">${safeText}</div>`;
+    if (role === 'bot' && Array.isArray(sources) && sources.length) {
+      const sourceList = sources
+        .filter((source) => source && /^https?:\/\//i.test(source.uri || ''))
+        .slice(0, 5);
+      if (sourceList.length) {
+        const sourceBox = document.createElement('div');
+        sourceBox.className = 'chat-sources';
+        sourceBox.innerHTML = '<strong>Sources</strong>' + sourceList
+          .map((source) => `<a href="${esc(source.uri)}" target="_blank" rel="noopener noreferrer">${esc(source.title || source.uri)}</a>`)
+          .join('');
+        row.querySelector('.bubble')?.appendChild(sourceBox);
+      }
+    }
     chatLog().appendChild(row);
     scrollChat();
     return row;
@@ -667,7 +753,7 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
   function setBusy(state) {
     busy = state;
     const status = $('#chat-status');
-    status.textContent = state ? 'Typing…' : 'Online';
+    status.textContent = state ? 'Typing...' : 'Online';
     status.classList.toggle('is-busy', state);
     $('#chat-form .send').disabled = state;
   }
@@ -706,6 +792,7 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
   /* ---------------- conversation & persistent memory ---------------- */
 
   const CHAT_STORAGE_KEY = 'banglapath_ai_chat_history_v2';
+  let pendingPinRequest = null;
 
   function saveChatHistory() {
     // Kept in-memory for active session. Does not persist across refresh as requested.
@@ -734,10 +821,10 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
     }, 20000);
 
     try {
-      const { reply, places } = await askGemini(history.slice(-30));
+      const { reply, places, sources } = await askGemini(history.slice(-30));
       clearTimeout(busyTimer);
       typing.remove();
-      addMessage('bot', reply);
+      addMessage('bot', reply, sources);
       history.push({ role: 'model', text: reply });
       renderSuggestions(places);
     } catch (err) {
@@ -753,6 +840,11 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
     } finally {
       clearTimeout(busyTimer);
       setBusy(false);
+      if (pendingPinRequest) {
+        const nextPin = pendingPinRequest;
+        pendingPinRequest = null;
+        window.setTimeout(() => askAboutPin(nextPin.pin, nextPin.place), 80);
+      }
     }
   }
 
@@ -811,13 +903,13 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
     frame.querySelectorAll('.pin').forEach((el) => el.remove());
 
     const DEFAULT_PINS = [
-      { id: 'paharpur', label: 'Paharpur Vihara', x: 26.0, y: 36.0 },
-      { id: 'tanguarhaor', label: 'Tanguar Haor', x: 56.0, y: 32.0 },
-      { id: 'lalbagh', label: 'Dhaka & Lalbagh Fort', x: 44.0, y: 54.0 },
-      { id: 'sundarbans', label: 'Sundarbans', x: 31.0, y: 70.0 },
-      { id: 'sajek', label: 'Sajek Valley', x: 74.0, y: 50.0 },
-      { id: 'coxsbazar', label: "Cox's Bazar", x: 76.0, y: 72.0 },
-      { id: 'saintmartin', label: "Saint Martin's Island", x: 86.0, y: 86.0 }
+      { id: 'sundarbans', label: 'Sundarbans', x: 30.0, y: 52.0 },
+      { id: 'coxsbazar', label: "Cox's Bazar + Inani", x: 77.0, y: 53.0 },
+      { id: 'nilgiri', label: 'Bandarban', x: 78.0, y: 43.0 },
+      { id: 'srimangal', label: 'Srimangal + Ratargul', x: 55.0, y: 25.0 },
+      { id: 'lalbagh', label: 'Old Dhaka + Lalbagh Fort', x: 45.0, y: 32.0 },
+      { id: 'sonargaon', label: 'Sonargaon + Panam City', x: 27.0, y: 15.0 },
+      { id: 'saintmartin', label: "Saint Martin's Island", x: 96.0, y: 84.0 }
     ];
     const pins = (catalog.pins && catalog.pins.length) ? catalog.pins : DEFAULT_PINS;
     pins.forEach((pin) => {
@@ -842,14 +934,18 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
   }
 
   function askAboutPin(pin, place) {
-    if (busy) return;
+    if (busy) {
+      pendingPinRequest = { pin, place };
+      showToast('I will explain that pin next...');
+      return;
+    }
     document.querySelectorAll('.pin').forEach((el) => el.classList.remove('is-active'));
     document.querySelector(`.pin[data-id="${pin.id}"]`)?.classList.add('is-active');
     openChat();
     const label = pin.label || pin.name || (place && place.name) || 'this destination';
     const name = place ? `${place.name}, ${place.district}` : label;
     send(
-      `I just tapped the map pin on ${name}. Tell me about this place in your own voice — what it feels like, what I would see and do there, and the best time to come.`,
+      `I just tapped the map pin on ${label}${place ? ` (${name})` : ''}. Explain this place to me like a friendly local guide: why a tourist must see it, what I will experience there, the best things to do, the best time to visit, and one important travel tip.`,
       { display: `Tell me about ${label} 📍` }
     );
   }
@@ -942,19 +1038,20 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z"/></svg>
             </button>
           </div>
+        </div>
+        <div class="card-bottom-info">
           <span class="card-rate-pill">
             <svg viewBox="0 0 24 24" class="card-star" aria-hidden="true"><path d="m12 3.2 2.7 5.6 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1L3.2 9.7l6.1-.9z"/></svg>
             <b>${p.rating}</b>
             <span class="reviews-count">(${esc(p.reviews)})</span>
           </span>
-        </div>
-        <div class="card-bottom-info">
           <h3 class="card-title">${esc(p.name)}</h3>
           <p class="card-blurb">${esc(p.blurb)}</p>
+        </div>
       </div>`;
   }
 
-  function exploreCardMarkup(p, index) {
+  function exploreCardMarkup(p, index, eager = false) {
     const badgeText = p.tag || (p.isFood ? 'Traditional Dish' : 'Popular Destination');
     const badgeIcon = p.isFood ? '🥘' : '🏅';
     const ratingText = `${p.rating}`;
@@ -963,7 +1060,7 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
 
     return `
       <div class="disc-place-card place-card" data-id="${p.id}" tabindex="0" role="button" aria-label="${esc(p.name)}, ${esc(p.district)}">
-        <img src="${p.image}" alt="${esc(p.name)}" class="disc-card-bg" loading="lazy" onerror="this.onerror=null; this.src='${p.isFood ? 'images/categories/cuisine.jpg' : 'images/places/sajek.jpg'}';" />
+        <img src="${p.image}" alt="${esc(p.name)}" class="disc-card-bg" loading="${eager ? 'eager' : 'lazy'}" onerror="this.onerror=null; this.src='${p.isFood ? 'images/categories/cuisine.jpg' : 'images/places/sajek.jpg'}';" />
         <div class="disc-card-overlay"></div>
         
         <div class="disc-card-top">
@@ -992,9 +1089,9 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
     if (!rail) return;
     const items = ids.map((id) => byId.get(id)).filter(Boolean);
     if (railSel === '#disc-rail') {
-      rail.innerHTML = items.map((p, i) => exploreCardMarkup(p, i)).join('');
+      rail.innerHTML = items.map((p, i) => exploreCardMarkup(p, i, true)).join('');
     } else {
-      rail.innerHTML = items.map(cardMarkup).join('');
+      rail.innerHTML = items.map((p, i) => exploreCardMarkup(p, i)).join('');
     }
     updateRailButtons();
   }
@@ -1603,8 +1700,8 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
         <div class="pdp-fact-cell">
           <i class="pdp-fact-icon-wrapper">${isFood ? '<svg viewBox="0 0 24 24" aria-hidden="true" style="width:18px;height:18px"><circle cx="12" cy="12" r="9" stroke="currentColor" fill="none" stroke-width="2"/><path d="M12 6v6l4 2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>' : factIconFor(p.travel, 'distance')}</i>
           <div class="pdp-fact-meta">
-            <span class="pdp-fact-sub">${isFood ? 'Prep & Serving' : 'Distance'}</span>
-            <b class="pdp-fact-main">${esc(p.distance || '—')}</b>
+            <span class="pdp-fact-sub">${isFood ? 'Prep & Serving' : 'Distance from you'}</span>
+            <b class="pdp-fact-main pdp-distance-value">${esc(isFood ? (p.distance || '—') : distanceLabelForPlace(p))}</b>
           </div>
         </div>
       </div>
@@ -1720,6 +1817,10 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
     const bookBtn = $('#pdp-book-now');
     if (bookBtn) {
       bookBtn.addEventListener('click', () => openBookingModal(p.id));
+    }
+
+    if (!isFood && !currentUserLocation) {
+      requestLocationPermission().then(() => updatePdpDistance(p));
     }
   }
 
@@ -4157,6 +4258,7 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
     { code: 'ar', name: 'Arabic' },
     { code: 'hi', name: 'Hindi' },
     { code: 'fr', name: 'French' },
+    { code: 'it', name: 'Italian' },
     { code: 'ja', name: 'Japanese' },
     { code: 'de', name: 'German' },
   ];
@@ -4240,6 +4342,20 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
   let activeTransAudio = null;
   let activeTransRecognition = null;
   let cachedVoices = [];
+
+  let lastAutoSpokenTranslation = '';
+  function recognitionLanguage(code) {
+    if (code === 'bn' || code === 'syl' || code === 'ctg') return 'bn-BD';
+    if (code === 'en') return 'en-US';
+    if (code === 'es') return 'es-ES';
+    if (code === 'fr') return 'fr-FR';
+    if (code === 'de') return 'de-DE';
+    if (code === 'it') return 'it-IT';
+    if (code === 'ja') return 'ja-JP';
+    if (code === 'ar') return 'ar-SA';
+    if (code === 'hi') return 'hi-IN';
+    return code;
+  }
 
   function updateVoicesCache() {
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
@@ -4689,6 +4805,7 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
           transState.tgtText = cached.translatedText;
           transState.pronText = cached.pronunciation || '';
           updateTranslatorResultDisplay();
+          autoSpeakTranslation(transState.tgtText, transState.tgtLang);
           return;
         }
 
@@ -4700,6 +4817,7 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
           transState.pronText = p.pron || '';
           clientTransCache.set(cacheKey, { translatedText: p.bn, pronunciation: p.pron || '' });
           updateTranslatorResultDisplay();
+          autoSpeakTranslation(p.bn, transState.tgtLang);
           return;
         }
 
@@ -4711,6 +4829,7 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
             transState.pronText = '';
             clientTransCache.set(cacheKey, { translatedText: match, pronunciation: '' });
             updateTranslatorResultDisplay();
+            autoSpeakTranslation(match, transState.tgtLang);
             return;
           }
         }
@@ -4942,6 +5061,7 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
       transState.pronText = cached.pronunciation || '';
       updateTranslatorResultDisplay();
       addRecentItem(clean, transState.tgtText, transState.pronText);
+      autoSpeakTranslation(transState.tgtText, to);
       return;
     }
 
@@ -4953,6 +5073,7 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
       clientTransCache.set(cacheKey, { translatedText: p.bn, pronunciation: p.pron || '' });
       updateTranslatorResultDisplay();
       addRecentItem(clean, p.bn, p.pron || '');
+      autoSpeakTranslation(p.bn, to);
       return;
     }
 
@@ -4964,6 +5085,7 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
         clientTransCache.set(cacheKey, { translatedText: bnMatch, pronunciation: '' });
         updateTranslatorResultDisplay();
         addRecentItem(clean, bnMatch, '');
+        autoSpeakTranslation(bnMatch, to);
         return;
       }
     }
@@ -5001,6 +5123,7 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
           });
           updateTranslatorResultDisplay();
           addRecentItem(clean, data.translatedText, data.pronunciation || '');
+          autoSpeakTranslation(data.translatedText, to);
           return;
         }
       }
@@ -5020,6 +5143,7 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
         clientTransCache.set(cacheKey, { translatedText: replyClean, pronunciation: '' });
         updateTranslatorResultDisplay();
         addRecentItem(clean, replyClean, '');
+        autoSpeakTranslation(replyClean, to);
         return;
       }
     } catch (e) {
@@ -5059,6 +5183,14 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
   }
 
   // Native Speech Audio output
+  function autoSpeakTranslation(text, langCode) {
+    if (!text || text === lastAutoSpokenTranslation) return;
+    lastAutoSpokenTranslation = text;
+    window.setTimeout(() => {
+      speakTranslation(text, langCode, null);
+    }, 120);
+  }
+
   function speakTranslation(text, langCode, triggerBtn) {
     if (!text) return;
 
@@ -5165,7 +5297,7 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
     try {
       const rec = new Recog();
       activeTransRecognition = rec;
-      rec.lang = transState.srcLang === 'bn' ? 'bn-BD' : (transState.srcLang === 'en' ? 'en-US' : transState.srcLang);
+      rec.lang = recognitionLanguage(transState.srcLang);
       rec.interimResults = true;
       rec.continuous = false;
       transState.isListening = true;
@@ -7793,7 +7925,9 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
     const locationBtn = $('#btn-location');
     if (locationBtn) {
       locationBtn.addEventListener('click', () => {
-        showNearbyPlaces();
+        requestLocationPermission().then((location) => {
+          if (location) showNearbyPlaces();
+        });
       });
     }
 
@@ -7848,10 +7982,7 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
         const placeId = viewMapBtn.dataset.id;
         const p = placeId ? byId.get(placeId) : null;
         if (p) {
-          showMap(p);
-          if (window.innerWidth <= 768) {
-            showToast(`📍 Map centered on ${p.name}`);
-          }
+          openPlaceDirections(p);
         }
         return;
       }
@@ -8222,6 +8353,7 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
     try { initChatHistory(); } catch (e) { log.error('initChatHistory failed:', e); }
     try { openChat(); } catch (e) { log.error('openChat failed:', e); }
     try { setupMobileMyPlan(); } catch (e) { log.error('setupMobileMyPlan failed:', e); }
+    requestLocationPermission().catch(() => {});
   }
 
   /* ================================================================

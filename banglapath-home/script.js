@@ -666,6 +666,12 @@ if (location.hash === '#home') {
   launch(true);
 }
 
+// Deep links such as ?view=place must not leave the real app hidden behind
+// the intro screen after a browser refresh.
+if (new URL(location.href).searchParams.has('view')) {
+  launch(true);
+}
+
 
 
 

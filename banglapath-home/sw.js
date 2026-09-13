@@ -1,8 +1,8 @@
 /* BanglaPath Service Worker for Offline Capability */
 
-const CACHE_NAME = 'banglapath-v1';
-const STATIC_CACHE = 'banglapath-static-v1';
-const DYNAMIC_CACHE = 'banglapath-dynamic-v1';
+const CACHE_NAME = 'banglapath-v2';
+const STATIC_CACHE = 'banglapath-static-v2';
+const DYNAMIC_CACHE = 'banglapath-dynamic-v2';
 
 // Files to cache immediately
 const STATIC_FILES = [
@@ -88,6 +88,24 @@ self.addEventListener('fetch', (event) => {
     }
     // For other external resources, try network then fail
     event.respondWith(fetch(request));
+    return;
+  }
+
+  // During development and deployments, always prefer the current source for
+  // HTML, CSS, JavaScript, and JSON. Fall back to cache only when offline.
+  const isAppSource = /\.(html|css|js|json)$/.test(url.pathname) || url.pathname === '/';
+  if (isAppSource) {
+    event.respondWith(
+      fetch(request)
+        .then((networkResponse) => {
+          if (networkResponse && networkResponse.ok) {
+            const copy = networkResponse.clone();
+            caches.open(STATIC_CACHE).then((cache) => cache.put(request, copy));
+          }
+          return networkResponse;
+        })
+        .catch(() => caches.match(request))
+    );
     return;
   }
 

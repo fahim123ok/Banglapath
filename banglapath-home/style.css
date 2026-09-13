@@ -468,7 +468,7 @@ body.is-launched .corner-skip-btn {
 .whiteout {
   position: fixed;
   inset: 0;
-  background: #000;
+  background: transparent;
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
@@ -642,8 +642,7 @@ body.is-launched .intro-screen {
   overflow: hidden;
   pointer-events: none;
   visibility: hidden;
-  /* Dark fill so any gap between leaves shows dark, not white */
-  background: #050a04;
+  background: transparent;
 }
 
 .sweep.is-active { visibility: visible; }

@@ -13,13 +13,13 @@
       "facts": "The medieval capital of Bengal; Panam City's abandoned merchant mansions still line one dreamlike street.",
       "lat": 23.6472,
       "lon": 90.6005,
-      "travel": "Road",
-      "fareLabel": "Bus Fare",
+        "travel": "Road",
+        "fareLabel": "Bus Fare",
       "fare": "৳50 – ৳150",
       "season": "Nov – Mar",
       "distance": "27 km",
-      "distanceFrom": "from Dhaka",
-      "about": "Panam City is the ghost street of my medieval capital — fifty-two merchant mansions facing each other across one narrow lane, their plaster peeling into pink and green. The Folk Art Museum sits inside the old Sardar Bari palace nearby.",
+        "distanceFrom": "from Dhaka",
+        "about": "Panam City is the ghost street of my medieval capital — fifty-two merchant mansions facing each other across one narrow lane, their plaster peeling into pink and green. The Folk Art Museum sits inside the old Sardar Bari palace nearby.",
       "gallery": [
         "images/places/sonargaon.jpg",
         "images/places/sonargaon-2.jpg",
@@ -28,23 +28,23 @@
       ],
       "division": "Dhaka"
     },
-    {
-      "id": "sajek",
+      {
+        "id": "sajek",
       "name": "Sajek Valley",
       "district": "Rangamati",
       "tag": "Hill Station",
-      "icon": "mountain",
-      "rating": 4.7,
+        "icon": "mountain",
+        "rating": 4.7,
       "reviews": "6K+",
       "blurb": "A queen of hills with mesmerizing beauty.",
       "image": "images/places/sajek.jpg",
-      "facts": "1,800 ft above sea level, where clouds roll into the room before sunrise. Home of Lusai, Pankua and Tripura communities.",
-      "lat": 23.3819,
+        "facts": "1,800 ft above sea level, where clouds roll into the room before sunrise. Home of Lusai, Pankua and Tripura communities.",
+        "lat": 23.3819,
       "lon": 92.2938,
       "travel": "Road",
       "fareLabel": "Jeep Fare",
-      "fare": "৳8,000 – ৳12,000",
-      "season": "Oct – Mar",
+        "fare": "৳8,000 – ৳12,000",
+        "season": "Oct – Mar",
       "distance": "70 km",
       "distanceFrom": "from Khagrachhari",
       "about": "My queen of hills sits 1,800 feet up in Rangamati, where clouds walk into your room before sunrise. You climb the last stretch by chander gari (open jeep) on a road that keeps folding into the sky.",
@@ -4372,58 +4372,58 @@
   ],
   "pins": [
     {
-      "id": "paharpur",
-      "label": "Paharpur Vihara",
-      "x": 27.5,
-      "y": 20.5,
-      "lat": 25.0315,
-      "lon": 88.977
-    },
-    {
-      "id": "tanguarhaor",
-      "label": "Tanguar Haor",
-      "x": 60,
-      "y": 20.5,
-      "lat": 25.1206,
-      "lon": 91.0718
-    },
-    {
-      "id": "lalbagh",
-      "label": "Dhaka & Lalbagh Fort",
-      "x": 45.8,
-      "y": 35.5,
-      "lat": 23.7198,
-      "lon": 90.3881
-    },
-    {
       "id": "sundarbans",
       "label": "Sundarbans",
-      "x": 28.8,
-      "y": 56.5,
+      "x": 30,
+      "y": 52,
       "lat": 21.9497,
       "lon": 89.1833
     },
     {
-      "id": "sajek",
-      "label": "Sajek Valley",
-      "x": 75.2,
-      "y": 53.5,
-      "lat": 23.3833,
-      "lon": 92.2933
+      "id": "coxsbazar",
+      "label": "Cox's Bazar + Inani",
+      "x": 77,
+      "y": 53,
+      "lat": 21.4272,
+      "lon": 91.97
     },
     {
-      "id": "coxsbazar",
-      "label": "Cox's Bazar",
-      "x": 73.2,
-      "y": 69,
-      "lat": 21.4272,
-      "lon": 92.0058
+      "id": "nilgiri",
+      "label": "Bandarban",
+      "x": 78,
+      "y": 43,
+      "lat": 22.1427,
+      "lon": 92.2177
+    },
+    {
+      "id": "srimangal",
+      "label": "Srimangal + Ratargul",
+      "x": 55,
+      "y": 25,
+      "lat": 24.3065,
+      "lon": 91.7296
+    },
+    {
+      "id": "lalbagh",
+      "label": "Old Dhaka + Lalbagh Fort",
+      "x": 45,
+      "y": 32,
+      "lat": 23.7198,
+      "lon": 90.3881
+    },
+    {
+      "id": "sonargaon",
+      "label": "Sonargaon + Panam City",
+      "x": 27,
+      "y": 15,
+      "lat": 23.6472,
+      "lon": 90.6005
     },
     {
       "id": "saintmartin",
       "label": "Saint Martin's Island",
-      "x": 98.0,
-      "y": 83.0,
+      "x": 96,
+      "y": 84,
       "lat": 20.6274,
       "lon": 92.3225
     }

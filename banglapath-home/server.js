@@ -17,16 +17,17 @@ const PORT = Number(process.env.PORT) || 3000;
  * The rest are tried in order when one is rate-limited. */
 const MODELS = [
   ...(process.env.GEMINI_MODEL ? [process.env.GEMINI_MODEL] : []),
-  'gemini-2.5-flash',       // working model with good quota
-  'gemini-1.5-flash',       // older but stable model
-  'gemini-1.5-flash-8b',    // lightweight alternative
-  'gemini-pro',            // fallback to pro model
+  'gemini-2.5-flash',
+  'gemini-2.5-flash-lite',
 ].filter((m, i, all) => all.indexOf(m) === i);
 
 // Thinking is configured differently across generations, and both families
 // otherwise burn the whole output budget before writing a word.
 const thinkingFor = (model) =>
   model.startsWith('gemini-3') ? { thinkingLevel: 'low' } : undefined;
+
+const supportsGoogleSearch = (model) =>
+  model.startsWith('gemini-2.5') || model.startsWith('gemini-2.0') || model.startsWith('gemini-3');
 
 // Load a local .env if present, so `node server.js` just works.
 for (const envPath of [path.join(ROOT, '.env'), path.join(process.cwd(), '.env')]) {
@@ -77,6 +78,13 @@ function salvage(text) {
   }
 }
 
+function cleanReplyText(text) {
+  return String(text || '')
+    .replace(/\n\s*(?:\*{0,2})?(?:clickable sources|sources)(?:\*{0,2})\s*:\s*[\s\S]*$/i, '')
+    .replace(/\[([^\]]+)\]\(https?:\/\/[^)]+\)/g, '$1')
+    .trim();
+}
+
 let placesCatalog = [];
 try {
   const pData = JSON.parse(fs.readFileSync(path.join(ROOT, 'places.json'), 'utf8'));
@@ -88,8 +96,14 @@ try {
 function readReply(raw) {
   const data = JSON.parse(raw);
   const cand = data.candidates?.[0];
+  const sources = (cand?.groundingMetadata?.groundingChunks || [])
+    .map((chunk) => chunk.web)
+    .filter((web) => web && /^https?:\/\//i.test(web.uri || ''))
+    .map((web) => ({ title: String(web.title || web.uri), uri: web.uri }))
+    .filter((source, index, all) => all.findIndex((item) => item.uri === source.uri) === index)
+    .slice(0, 5);
   const text = (cand?.content?.parts || []).map((p) => p.text || '').join('').trim();
-  if (!text) return { reply: '', places: [], finish: cand?.finishReason || 'EMPTY' };
+  if (!text) return { reply: '', places: [], sources, finish: cand?.finishReason || 'EMPTY' };
 
   // If response is wrapped in ```json ... ```
   let cleanText = text;
@@ -124,7 +138,7 @@ function readReply(raw) {
     }
   }
 
-  return { reply: replyStr, places: extractedPlaces, finish: cand?.finishReason };
+  return { reply: cleanReplyText(replyStr), places: extractedPlaces, sources, finish: cand?.finishReason };
 }
 
 function json(res, code, body) {
@@ -212,6 +226,7 @@ REAL-WORLD CURRENT DATE & LIVE SEARCH:
 - TODAY'S REAL-WORLD DATE IS: ${currentDateStr} (${isoDate}).
 - YOU ARE OPERATING IN THE PRESENT YEAR 2026. NEVER claim you are in 2024 or that 2026 is in the future!
 - You have real-time Google Search grounding enabled. Whenever the user asks to "search on web", asks about current news, latest events, politics, recent happenings, transport, weather, or dates in 2026, use your Google Search tool to search the live web and provide current facts as of ${currentDateStr}.
+- Do not include URLs, markdown links, a "Sources" heading, or a "Clickable Sources" section inside your reply. The app automatically adds verified clickable source links below your answer.
 
 REPLY LENGTH DIRECTIVE (MEDIUM LENGTH ONLY - CRITICAL):
 - Do NOT make your replies too long (no giant walls of text or exhaustive essays).
@@ -250,11 +265,16 @@ KNOWLEDGE SCOPE:
   // before giving up.
   let last = 'Gemini did not answer.';
   const deadline = Date.now() + 90000;
-  for (let attempt = 0; attempt < MODELS.length + 1; attempt += 1) {
-    if (attempt) await new Promise((r) => setTimeout(r, 7000)); // wait 7s between model retries
+  for (let attempt = 0; attempt < MODELS.length; attempt += 1) {
+    if (attempt) await new Promise((r) => setTimeout(r, 800));
     if (Date.now() > deadline) break;
     const model = MODELS[Math.min(attempt, MODELS.length - 1)];
     const tc = thinkingFor(model);
+    if (supportsGoogleSearch(model)) {
+      body.tools = [{ google_search: {} }];
+    } else {
+      delete body.tools;
+    }
     if (tc) {
       body.generationConfig.thinkingConfig = tc;
     } else {
@@ -292,6 +312,7 @@ KNOWLEDGE SCOPE:
         upstream.status === 429
           ? 'The Gemini key has run out of free quota for now — try again in a minute.'
           : `Gemini said: ${message}`;
+      if (upstream.status === 429) break;
       if (upstream.status < 500 && upstream.status !== 429 && upstream.status !== 404) break;
       continue;
     }
@@ -308,7 +329,7 @@ KNOWLEDGE SCOPE:
       last = 'Gemini sent an empty reply.';
       continue;
     }
-    return json(res, 200, { reply: out.reply, places: out.places.slice(0, 2) });
+    return json(res, 200, { reply: out.reply, places: out.places.slice(0, 2), sources: out.sources });
   }
 
   // All models failed - return error so client shows proper error message
@@ -535,7 +556,13 @@ async function serveStatic(req, res) {
     return fs.createReadStream(file, { start, end }).pipe(res);
   }
 
-  res.writeHead(200, { 'Content-Type': type, 'Content-Length': stat.size, 'Accept-Ranges': 'bytes' });
+  const shouldRefreshDuringDevelopment = ['.html', '.css', '.js', '.json'].includes(path.extname(file).toLowerCase());
+  res.writeHead(200, {
+    'Content-Type': type,
+    'Content-Length': stat.size,
+    'Accept-Ranges': 'bytes',
+    'Cache-Control': shouldRefreshDuringDevelopment ? 'no-store' : 'public, max-age=3600',
+  });
   fs.createReadStream(file).pipe(res);
 }
 

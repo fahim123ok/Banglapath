@@ -1,0 +1,54 @@
+Master UI/UX & Bug Fix Implementation Plan
+A comprehensive, product-designer level plan to fix place card layout anomalies, text overflows, map pin misalignments, and refine mobile & desktop user experiences across the entire BanglaPath suite.
+
+User Review Required
+IMPORTANT
+
+Place Card Layout Redesign: The standalone gray arch element created by 3-column flex wrapping of ratings will be eliminated. Ratings (⭐ 4.7 (6K+)) will be seamlessly integrated into the card header/footer alongside titles and tag pills.
+Text Overflow Prevention: All card titles, tags, blurbs, and PDP text elements will have strict line clamping (line-clamp: 2, overflow: hidden, text-overflow: ellipsis) so text never spills onto the page background.
+Map Pin Recalibration: The Bangladesh 3D map container (#map-frame) and pin coordinates (x%, y%) will be locked to the map graphic image aspect ratio so pins sit accurately over Dhaka, Sundarbans, Sylhet, Cox's Bazar, etc., instead of grouping at the bottom.
+Proposed Changes
+1. Place Card Architecture & Layout Fixes (banglapath-home/home.js & banglapath-home/home.css)
+[MODIFY] 
+home.js
+Re-architect cardMarkup() and exploreCardMarkup():
+Top Row: Left side gets card-tag-pill (e.g. 🏞️ Hill Station); Right side gets card-actions (Heart & Share buttons).
+Bottom Info Panel: Rating badge (⭐ 4.7 (6K+)) positioned elegantly right above card-title, followed by line-clamped card-blurb.
+Remove three-column layout in card-top-row that caused element wrapping and broken gray arch cards.
+[MODIFY] 
+home.css
+Enforce strict card boundaries (overflow: hidden; max-width: 100%;).
+Add -webkit-line-clamp: 2; overflow: hidden; text-overflow: ellipsis; to .card-blurb, .card-title, and .mh-card-blurb.
+Style .card-rate-pill as a compact frosted glass badge (background: rgba(0,0,0,0.55); backdrop-filter: blur(8px)).
+2. Map Pin Coordinate Calibration (banglapath-home/home.js & banglapath-home/home.css)
+[MODIFY] 
+home.js
+Update renderPins() with exact relative percentage coordinates matching images/bd-map.png:
+Paharpur: x: 28%, y: 28%
+Tanguar Haor: x: 62%, y: 24%
+Dhaka & Lalbagh: x: 48%, y: 48%
+Sundarbans: x: 32%, y: 66%
+Sajek Valley: x: 78%, y: 46%
+Cox's Bazar: x: 76%, y: 68%
+Saint Martin's: x: 88%, y: 84%
+[MODIFY] 
+home.css
+Ensure .map-frame maintains explicit relative positioning (position: relative; display: block; width: 100%; height: auto;).
+Set .pin positioning anchor to transform: translate(-50%, -100%) so pin tips point precisely to target locations.
+3. Comprehensive Page Audit & Production Polish
+[MODIFY] 
+home.css
+Fix Explore page scrolling (#page-discover, .disc-reco-section).
+Fix Mobile Bottom Navigation bar to span edge-to-edge (width: 100%; border-radius: 0; bottom: 0).
+Ensure floating circular AI button (.chat-reveal) is displayed cleanly when chat is closed.
+[MODIFY] 
+modules.js
+Ensure automatic speech output (TTS) plays once upon successful translation.
+Upgrade voice dictation mic to support bn-BD (Bangla) and en-US (English) speech recognition.
+Verification Plan
+Automated Verification
+Run npm run lint (node --check on server.js, modules.js, home.js, script.js, config.js) to ensure 0 syntax or runtime errors.
+Visual & Interactive Inspection
+Verify map pins sit accurately over Bangladesh map features.
+Verify place cards render without gray arch overflow or spilling text.
+Test mobile responsive navigation, explore page scrolling, and translator auto-speech.
