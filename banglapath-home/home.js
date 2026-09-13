@@ -608,7 +608,7 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
 
   /* ---------------- chat rendering ---------------- */
 
-  const log = () => $('#chat-log');
+  const chatLog = () => $('#chat-log');
   const chatBody = () => $('#chat-body');
 
   function scrollChat() {
@@ -694,7 +694,7 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
            <div class="bubble">${safeText}</div>`
         : `<span class="msg-avatar"><img src="images/bot-avatar.png" alt="" /></span>
            <div class="bubble">${safeText}</div>`;
-    log().appendChild(row);
+    chatLog().appendChild(row);
     scrollChat();
     return row;
   }
@@ -705,7 +705,7 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
     row.innerHTML =
       '<span class="msg-avatar"><img src="images/bot-avatar.png" alt="" /></span>' +
       '<div class="bubble"><span class="typing"><i></i><i></i><i></i></span></div>';
-    log().appendChild(row);
+    chatLog().appendChild(row);
     scrollChat();
     return row;
   }
@@ -717,6 +717,8 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
     status.classList.toggle('is-busy', state);
     $('#chat-form .send').disabled = state;
   }
+
+  const chatStatus = () => $('#chat-status');
 
   function renderSuggestions(ids) {
     const wrap = $('#suggest');
