@@ -15,61 +15,15 @@ const BanglaPath = (() => {
   const $ = (sel) => document.querySelector(sel);
 
   /* ---------------- GLOBAL ERROR HANDLER ---------------- */
-  const showErrorUI = (message) => {
-    const existingError = document.getElementById('bp-error-boundary');
-    if (existingError) existingError.remove();
 
-    const errorUI = document.createElement('div');
-    errorUI.id = 'bp-error-boundary';
-    errorUI.style.cssText = `
-      position: fixed;
-      inset: 0;
-      z-index: 9999;
-      background: rgba(255, 255, 255, 0.98);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-      text-align: center;
-      font-family: Poppins, sans-serif;
-    `;
-
-    errorUI.innerHTML = `
-      <div style="max-width: 400px;">
-        <div style="font-size: 48px; margin-bottom: 16px;">⚠️</div>
-        <h2 style="color: #1f2937; margin-bottom: 12px;">Oops! Something went wrong</h2>
-        <p style="color: #6b7280; margin-bottom: 24px; line-height: 1.6;">${message || 'An unexpected error occurred. Please refresh the page or try again later.'}</p>
-        <button onclick="location.reload()" style="
-          background: #047857;
-          color: white;
-          border: none;
-          padding: 12px 24px;
-          border-radius: 8px;
-          font-size: 16px;
-          cursor: pointer;
-          transition: background 0.2s;
-        ">Refresh Page</button>
-      </div>
-    `;
-
-    document.body.appendChild(errorUI);
-  };
-
-  // Global error handler
+  // Global error handler — only log, never show white overlay
   window.addEventListener('error', (event) => {
-    if (typeof DEV_MODE !== 'undefined' && DEV_MODE) {
-      console.error('Global error:', event.error);
-    }
-    showErrorUI('The app encountered an error. We\'re working to fix it!');
+    log.error('Global error:', event.error);
   });
 
-  // Unhandled promise rejection handler
+  // Unhandled promise rejection handler — only log, never show white overlay
   window.addEventListener('unhandledrejection', (event) => {
-    if (typeof DEV_MODE !== 'undefined' && DEV_MODE) {
-      console.error('Unhandled promise rejection:', event.reason);
-    }
-    showErrorUI('A network error occurred. Please check your connection and try again.');
+    log.error('Unhandled promise rejection:', event.reason);
   });
 
   // Safe console logging wrapper
@@ -718,8 +672,6 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
     $('#chat-form .send').disabled = state;
   }
 
-  const chatStatus = () => $('#chat-status');
-
   function renderSuggestions(ids) {
     const wrap = $('#suggest');
     const list = $('#suggest-list');
@@ -823,7 +775,7 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
       b.addEventListener('click', () => send(prompt, { display: label }));
       chips.appendChild(b);
     });
-    log().appendChild(chips);
+    chatLog().appendChild(chips);
     renderSuggestions(catalog.openingSuggestions);
   }
 
@@ -834,7 +786,7 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
     } catch (e) {}
     history = [];
     busy = false;
-    const l = log();
+    const l = chatLog();
     if (l) l.innerHTML = '';
     greet();
   }
@@ -845,7 +797,7 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
     try {
       localStorage.removeItem(CHAT_STORAGE_KEY);
     } catch (e) {}
-    const l = log();
+    const l = chatLog();
     if (l) l.innerHTML = '';
     renderSuggestions([]);
     greet();
@@ -859,13 +811,13 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
     frame.querySelectorAll('.pin').forEach((el) => el.remove());
 
     const DEFAULT_PINS = [
-      { id: 'paharpur', label: 'Paharpur Vihara', x: 27.5, y: 20.5 },
-      { id: 'tanguarhaor', label: 'Tanguar Haor', x: 60.0, y: 20.5 },
-      { id: 'lalbagh', label: 'Dhaka & Lalbagh Fort', x: 45.8, y: 35.5 },
-      { id: 'sundarbans', label: 'Sundarbans', x: 28.8, y: 56.5 },
-      { id: 'sajek', label: 'Sajek Valley', x: 75.2, y: 53.5 },
-      { id: 'coxsbazar', label: "Cox's Bazar", x: 73.2, y: 69.0 },
-      { id: 'saintmartin', label: "Saint Martin's Island", x: 98.0, y: 83.0 }
+      { id: 'paharpur', label: 'Paharpur Vihara', x: 26.0, y: 36.0 },
+      { id: 'tanguarhaor', label: 'Tanguar Haor', x: 56.0, y: 32.0 },
+      { id: 'lalbagh', label: 'Dhaka & Lalbagh Fort', x: 44.0, y: 54.0 },
+      { id: 'sundarbans', label: 'Sundarbans', x: 31.0, y: 70.0 },
+      { id: 'sajek', label: 'Sajek Valley', x: 74.0, y: 50.0 },
+      { id: 'coxsbazar', label: "Cox's Bazar", x: 76.0, y: 72.0 },
+      { id: 'saintmartin', label: "Saint Martin's Island", x: 86.0, y: 86.0 }
     ];
     const pins = (catalog.pins && catalog.pins.length) ? catalog.pins : DEFAULT_PINS;
     pins.forEach((pin) => {
@@ -976,7 +928,7 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
   function cardMarkup(p) {
     const isSaved = isPlaceSaved(p.id);
     return `
-      <button class="place-card" type="button" data-id="${p.id}" aria-label="${esc(p.name)}, ${esc(p.district)}">
+      <div class="place-card" role="button" tabindex="0" data-id="${p.id}" aria-label="${esc(p.name)}, ${esc(p.district)}">
         <img src="${p.image}" alt="${esc(p.name)}" loading="lazy" srcset="${p.image} 1x, ${p.image.replace('.jpg', '@2x.jpg')} 2x" sizes="(max-width: 600px) 100vw, (max-width: 1200px) 50vw, 33vw" />
         <div class="card-gradient-top"></div>
         <div class="card-gradient-bottom"></div>
@@ -999,8 +951,7 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
         <div class="card-bottom-info">
           <h3 class="card-title">${esc(p.name)}</h3>
           <p class="card-blurb">${esc(p.blurb)}</p>
-        </div>
-      </button>`;
+      </div>`;
   }
 
   function exploreCardMarkup(p, index) {
@@ -1316,7 +1267,6 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
       url.searchParams.set('view', view);
       window.history.pushState(state, '', url);
     }
-  }
     $('#app').classList.toggle('on-place', view === 'place');
     const sr = $('#search-results');
     if (sr) sr.hidden = true;
@@ -8239,22 +8189,39 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
   async function enterHome() {
     if (started) return;
     started = true;
-    await ready;
+
+    // Always show the app first, even if data loading fails
     const app = document.getElementById('app');
-    app.hidden = false;
-    // Add is-open class to trigger opacity transition
-    setTimeout(() => app.classList.add('is-open'), 50);
-    renderPins();
-    renderRail();
-    renderCats();
-    wire();
-    syncTopbarUser();
-    initChatHistory();
-    openChat();
-    setupMobileMyPlan();
-    requestAnimationFrame(() => app.classList.add('is-open'));
-    // Boot mobile home (only activates on ≤768px via CSS)
-    initMobileHome();
+    if (app) {
+      app.hidden = false;
+      app.classList.add('is-open');
+      app.style.opacity = '1';
+      setTimeout(() => app.classList.add('is-open'), 50);
+      requestAnimationFrame(() => app.classList.add('is-open'));
+    }
+
+    // Boot mobile home immediately (only activates on ≤768px via CSS)
+    try { initMobileHome(); } catch (e) { log.error('initMobileHome failed:', e); }
+
+    // Wait for places data, but with a timeout so the app never hangs
+    try {
+      await Promise.race([
+        ready,
+        new Promise((_, rej) => setTimeout(() => rej(new Error('Data load timeout')), 5000))
+      ]);
+    } catch (e) {
+      log.error('Data load failed or timed out:', e);
+    }
+
+    // Render content — each step is isolated so one failure doesn't block the rest
+    try { renderPins(); } catch (e) { log.error('renderPins failed:', e); }
+    try { renderRail(); } catch (e) { log.error('renderRail failed:', e); }
+    try { renderCats(); } catch (e) { log.error('renderCats failed:', e); }
+    try { wire(); } catch (e) { log.error('wire failed:', e); }
+    try { syncTopbarUser(); } catch (e) { log.error('syncTopbarUser failed:', e); }
+    try { initChatHistory(); } catch (e) { log.error('initChatHistory failed:', e); }
+    try { openChat(); } catch (e) { log.error('openChat failed:', e); }
+    try { setupMobileMyPlan(); } catch (e) { log.error('setupMobileMyPlan failed:', e); }
   }
 
   /* ================================================================

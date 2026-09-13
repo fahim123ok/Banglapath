@@ -397,8 +397,6 @@ body.skip-intro .whiteout { display: none; }
   letter-spacing: 0;
   opacity: 0;
   transition: opacity 0.7s ease;
-  /* Ensure app has solid bg even at opacity 0 so no white bleeds through */
-  isolation: isolate;
 }
 
 .app[hidden] { display: none; }
@@ -420,6 +418,8 @@ body.skip-intro .whiteout { display: none; }
 /* ---------- left rail ---------- */
 
 .rail {
+  grid-column: 1;
+  grid-row: 1;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -494,6 +494,8 @@ select:focus-visible,
 /* ---------- top bar ---------- */
 
 .shell {
+  grid-column: 2;
+  grid-row: 1;
   display: flex;
   flex-direction: column;
   min-width: 0;
@@ -1103,6 +1105,8 @@ select:focus-visible,
 /* ---------- chat panel ---------- */
 
 .chat {
+  grid-column: 3;
+  grid-row: 1;
   position: relative;
   display: flex;
   flex-direction: column;
@@ -1149,17 +1153,17 @@ select:focus-visible,
 .chat-hide svg { transition: transform 0.2s ease; }
 
 .app.chat-hidden { grid-template-columns: var(--rail-w) minmax(0, 1fr); }
-.app.chat-hidden .chat { display: none; }
+.app.chat-hidden .chat { display: none !important; }
 
 .chat-reveal {
-  position: fixed;
-  right: 22px;
-  bottom: 22px;
-  z-index: 33;
+  position: fixed !important;
+  right: 24px !important;
+  bottom: 24px !important;
+  z-index: 9999 !important;
   display: none;
   place-items: center;
-  width: 54px;
-  height: 54px;
+  width: 56px;
+  height: 56px;
   padding: 0;
   border: 0;
   border-radius: 50%;
@@ -1171,7 +1175,7 @@ select:focus-visible,
 
 .chat-reveal img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
 .chat-reveal:hover { transform: scale(1.06); }
-.app.chat-hidden .chat-reveal { display: grid; }
+.app.chat-hidden .chat-reveal { display: grid !important; }
 
 /* real map above the conversation on a place page */
 

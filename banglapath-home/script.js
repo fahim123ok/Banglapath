@@ -535,6 +535,43 @@ function launch(fast = false) {
     }
   };
 
+  /**
+   * FIX: Always call enterHome() — poll until window.BanglaPath is ready.
+   * This eliminates the white screen caused by a race condition where
+   * home.js hadn't finished evaluating yet when launch() was called,
+   * causing the fallback to skip enterHome() entirely, leaving a
+   * blank/white app shell with no content rendered.
+   */
+  function doEnterHome() {
+    const appEl = document.getElementById('app');
+    if (appEl) {
+      appEl.hidden = false;
+      appEl.classList.add('is-open');
+      appEl.style.opacity = '1';
+    }
+    const mobileHome = document.getElementById('mobile-home');
+    if (mobileHome) {
+      mobileHome.hidden = false;
+      mobileHome.classList.add('is-open');
+      mobileHome.style.opacity = '1';
+    }
+
+    if (window.BanglaPath && typeof window.BanglaPath.enterHome === 'function') {
+      window.BanglaPath.enterHome();
+    } else {
+      let attempts = 0;
+      const poll = setInterval(() => {
+        attempts++;
+        if (window.BanglaPath && typeof window.BanglaPath.enterHome === 'function') {
+          clearInterval(poll);
+          window.BanglaPath.enterHome();
+        } else if (attempts > 100) {
+          clearInterval(poll);
+        }
+      }, 30);
+    }
+  }
+
   if (fast) {
     document.getElementById('screen-carousel')?.classList.add('is-hidden');
     document.getElementById('screen-auth')?.classList.add('is-hidden');
@@ -542,15 +579,7 @@ function launch(fast = false) {
     tigerVideo?.pause();
     deerVideo?.pause();
     revealMobileNav();
-    if (window.BanglaPath && typeof window.BanglaPath.enterHome === 'function') {
-      window.BanglaPath.enterHome();
-    } else {
-      const appEl = document.getElementById('app');
-      if (appEl) {
-        appEl.hidden = false;
-        setTimeout(() => appEl.classList.add('is-open'), 50);
-      }
-    }
+    doEnterHome();
     return;
   }
 
@@ -570,16 +599,7 @@ function launch(fast = false) {
     tigerVideo?.pause();
     deerVideo?.pause();
     revealMobileNav();
-    if (window.BanglaPath && typeof window.BanglaPath.enterHome === 'function') {
-      window.BanglaPath.enterHome();
-    } else {
-      const appEl = document.getElementById('app');
-      if (appEl) {
-        appEl.hidden = false;
-        // Add is-open class to trigger opacity transition
-        setTimeout(() => appEl.classList.add('is-open'), 50);
-      }
-    }
+    doEnterHome();
     window.removeEventListener('wheel', blockScroll);
     window.removeEventListener('touchmove', blockScroll);
   }, 600);
