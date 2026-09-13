@@ -17,13 +17,10 @@ const PORT = Number(process.env.PORT) || 3000;
  * The rest are tried in order when one is rate-limited. */
 const MODELS = [
   ...(process.env.GEMINI_MODEL ? [process.env.GEMINI_MODEL] : []),
-  'gemini-3.6-flash',       // confirmed working
-  'gemini-3.7-flash',       // confirmed working
-  'gemini-3.8-flash',       // confirmed working
-  'gemini-flash-latest',    // confirmed working
-  'gemini-3.5-flash',       // confirmed working
-  'gemini-3.5-flash-lite',  // confirmed working
-  'gemini-3.1-flash-lite',  // confirmed working - lightest, good fallback
+  'gemini-2.5-flash',       // working model with good quota
+  'gemini-1.5-flash',       // older but stable model
+  'gemini-1.5-flash-8b',    // lightweight alternative
+  'gemini-pro',            // fallback to pro model
 ].filter((m, i, all) => all.indexOf(m) === i);
 
 // Thinking is configured differently across generations, and both families
